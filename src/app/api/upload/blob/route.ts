@@ -39,11 +39,29 @@ export async function POST(req: Request) {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+        'x-add-random-suffix': 'false', // Optional: Keep filename if desired
       },
       body: file,
     });
 
     const json = await upload.json();
+
+    if (!upload.ok) {
+      console.error("Vercel Blob/Manual Upload Error:", json);
+      const errorMessage = json.error?.message || "Error desconocido al subir archivo.";
+
+      // Handle missing token specific case
+      if (upload.status === 401) {
+        return NextResponse.json({ error: "Configuración de Vercel Blob incompleta (Token faltante)." }, { status: 500 });
+      }
+      return NextResponse.json({ error: errorMessage }, { status: upload.status });
+    }
+
+    // Ensure URL exists
+    if (!json.url) {
+      return NextResponse.json({ error: "La subida no devolvió una URL válida." }, { status: 500 });
+    }
+
     return NextResponse.json({ url: json.url });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
