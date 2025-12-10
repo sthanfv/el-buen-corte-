@@ -98,22 +98,59 @@ export default function OrderSidebar({
     return encodeURIComponent(header + clientDetails + orderDetails + totalLine);
   };
 
-  const onSubmit = (data: OrderFormValues) => {
-    const message = generateWhatsAppMessage(data);
-    const whatsappUrl = `https://wa.me/${APP_CONFIG.whatsappNumber}?text=${message}`;
+  const onSubmit = async (data: OrderFormValues) => {
+    try {
+      // 1. Prepare Order Data
+      const orderPayload = {
+        customerName: data.name,
+        customerAddress: data.address,
+        paymentMethod: data.paymentMethod,
+        items: order.map(item => ({
+          id: item.id,
+          name: item.name,
+          selectedWeight: item.selectedWeight,
+          finalPrice: item.finalPrice,
+          pricePerKg: item.price
+        })),
+        total: total,
+      };
 
-    window.open(whatsappUrl, '_blank');
+      // 2. Save to Backend (Optimistic: don't block user if fails, but log it)
+      // Actually, we should block slightly to ensure we have the record.
+      toast({ title: 'Procesando...', message: 'Generando tu pedido para WhatsApp...' });
 
-    toast({
-      type: 'success',
-      title: 'Pedido listo para enviar',
-      message: 'Tu pedido se ha abierto en WhatsApp. ¡Presiona enviar!',
-    });
+      const res = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      });
 
-    // Limpiar el formulario y el pedido
-    form.reset();
-    setOrder([]);
-    onClose();
+      if (!res.ok) {
+        console.error('Error saving order', await res.text());
+        // Proceed anyway so sales aren't lost, but maybe warn?
+      }
+
+      // 3. Generate WhatsApp Link
+      const message = generateWhatsAppMessage(data);
+      const whatsappUrl = `https://wa.me/${APP_CONFIG.whatsappNumber}?text=${message}`;
+
+      window.open(whatsappUrl, '_blank');
+
+      toast({
+        type: 'success',
+        title: '¡Pedido Iniciado!',
+        message: 'Continúa la conversación en WhatsApp para finalizar.',
+      });
+
+      // 4. Clear Cart
+      form.reset();
+      setOrder([]);
+      onClose();
+
+    } catch (error) {
+      console.error('Error in checkout', error);
+      toast({ type: 'error', message: 'Hubo un problema iniciando el pedido.' });
+    }
   };
 
   return (

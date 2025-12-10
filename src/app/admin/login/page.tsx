@@ -55,12 +55,12 @@ export default function Login() {
         <div className="absolute inset-0 z-0">
           {/* Fondo abstracto simulando humo/carbón */}
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-gray-800/20 via-transparent to-transparent opacity-50"></div>
-          {/* Imagen de fondo sutil */}
+          {/* Imagen de fondo sutil - Para cambiarla, sube tu foto a public/login-bg.jpg */}
           <Image
-            src="https://images.unsplash.com/photo-1603048588665-791ca8aea617?q=80&w=1000&auto=format&fit=crop"
+            src="/login-bg.jpg"
             alt="Carne Premium"
             fill
-            className="object-cover opacity-20 mix-blend-overlay"
+            className="object-cover opacity-30 mix-blend-overlay"
             priority
           />
         </div>
