@@ -7,7 +7,9 @@ if (!admin.apps.length) {
     const serviceAccountJson = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON;
     const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
     const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
-    const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    const projectId =
+      process.env.FIREBASE_ADMIN_PROJECT_ID ||
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
     let cert;
 
@@ -19,17 +21,19 @@ if (!admin.apps.length) {
         // Handle escaped newlines from .env (e.g. `\\n` to `\n`)
         privateKey: privateKey.replace(/\\n/g, '\n'),
       };
-      console.log("Firebase Admin initialized with individual vars.");
+      console.log('Firebase Admin initialized with individual vars.');
     } else if (serviceAccountJson) {
       // Option B: JSON Blob (Fallback)
       cert = JSON.parse(serviceAccountJson);
-      console.log("Firebase Admin initialized with JSON var.");
+      console.log('Firebase Admin initialized with JSON var.');
     } else {
-      throw new Error('Missing Firebase Admin Credentials (FIREBASE_ADMIN_PRIVATE_KEY or JSON).');
+      throw new Error(
+        'Missing Firebase Admin Credentials (FIREBASE_ADMIN_PRIVATE_KEY or JSON).'
+      );
     }
 
     admin.initializeApp({
-      credential: admin.credential.cert(cert)
+      credential: admin.credential.cert(cert),
     });
   } catch (e) {
     console.error('Firebase admin initialization error', e);

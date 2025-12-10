@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
+import { Analytics } from '@vercel/analytics/react';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -24,10 +25,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={cn(
-          'font-sans antialiased bg-background',
-          fontSans.variable
-        )}
+        className={cn('font-sans antialiased bg-background', fontSans.variable)}
       >
         <ThemeProvider
           attribute="class"
@@ -37,6 +35,7 @@ export default function RootLayout({
         >
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

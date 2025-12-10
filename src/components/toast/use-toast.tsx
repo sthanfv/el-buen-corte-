@@ -34,7 +34,7 @@ interface ToastContextType {
 }
 
 const ToastContext = createContext<ToastContextType>({
-  toast: () => { },
+  toast: () => {},
 });
 
 interface ToastStateItem extends ToastOptions {
@@ -69,7 +69,9 @@ const ToastControllerContext = createContext<{
   onDismiss: (id: string) => void;
 } | null>(null);
 
-export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const ToastProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [state, dispatch] = useReducer(toastReducer, { toasts: [] });
 
   const toast = useCallback((options: ToastOptions) => {
@@ -83,7 +85,9 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   return (
     <ToastContext.Provider value={{ toast }}>
-      <ToastControllerContext.Provider value={{ toasts: state.toasts, onDismiss }}>
+      <ToastControllerContext.Provider
+        value={{ toasts: state.toasts, onDismiss }}
+      >
         {children}
       </ToastControllerContext.Provider>
     </ToastContext.Provider>
@@ -94,7 +98,7 @@ export const ToastController: React.FC = () => {
   const context = useContext(ToastControllerContext);
   // Context check removed from here to allow hooks to run
 
-  const { toasts, onDismiss } = context || { toasts: [], onDismiss: () => { } };
+  const { toasts, onDismiss } = context || { toasts: [], onDismiss: () => {} };
   const [visibleToasts, setVisibleToasts] = useState<ToastStateItem[]>([]);
 
   useEffect(() => {
@@ -121,7 +125,7 @@ export const ToastController: React.FC = () => {
         <Toast
           key={toastProps.id}
           {...toastProps}
-          isVisible={toasts.some(t => t.id === toastProps.id)}
+          isVisible={toasts.some((t) => t.id === toastProps.id)}
           onDismiss={onDismiss}
         />
       ))}

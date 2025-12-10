@@ -1,4 +1,3 @@
-
 # Proyecto: Buen Corte - Catálogo Digital y Generador de Pedidos
 
 ![Buen Corte Hero](https://picsum.photos/seed/hero-main/1200/300)
@@ -63,27 +62,27 @@ src/
 
 ### 2.2. Checklist de Funcionalidades
 
-| Funcionalidad | Implementado | Notas |
-| :--- | :---: | :--- |
-| **Login Admin** | ✅ **Sí** | Formulario funcional que autentica contra Firebase. |
-| **AdminGuard / Protección de rutas**| ✅ **Sí** | Protege las rutas bajo `/admin/*` verificando el `custom claim`. |
-| **Dashboard** | ✅ **Sí** | Página de bienvenida del admin con enlaces a otras secciones. |
-| **CRUD productos** | ✅ **Sí** | Endpoints de API para Crear, Leer, Actualizar y Eliminar productos. |
-| **Integración con Firestore** | ✅ **Sí** | Los endpoints de la API usan el SDK de Admin para operar en Firestore. |
-| **Upload imágenes** | ✅ **Sí** | Endpoints de API para subir archivos a Vercel Blob y Cloudinary. |
-| **Vercel Blob** | ✅ **Sí** | El endpoint `api/upload/blob` está implementado. |
-| **Cloudinary** | ✅ **Sí** | El endpoint `api/upload/cloudinary` está implementado. |
-| **Frontend público funcionando** | ✅ **Sí** | El catálogo, carrito y flujo de pedido por WhatsApp son funcionales. |
-| **Catálogo conectado a Firestore**| ❌ **No** | El frontend público actualmente consume datos mock de `src/data/products.ts`. |
-| **Toast System instalado** | ✅ **Sí** | El sistema de notificaciones está instalado y se usa en la app. |
-| **Variables .env configuradas** | ✅ **Sí** | El archivo `.env` contiene las variables para Firebase y otros servicios. |
-
+| Funcionalidad                        | Implementado | Notas                                                                         |
+| :----------------------------------- | :----------: | :---------------------------------------------------------------------------- |
+| **Login Admin**                      |  ✅ **Sí**   | Formulario funcional que autentica contra Firebase.                           |
+| **AdminGuard / Protección de rutas** |  ✅ **Sí**   | Protege las rutas bajo `/admin/*` verificando el `custom claim`.              |
+| **Dashboard**                        |  ✅ **Sí**   | Página de bienvenida del admin con enlaces a otras secciones.                 |
+| **CRUD productos**                   |  ✅ **Sí**   | Endpoints de API para Crear, Leer, Actualizar y Eliminar productos.           |
+| **Integración con Firestore**        |  ✅ **Sí**   | Los endpoints de la API usan el SDK de Admin para operar en Firestore.        |
+| **Upload imágenes**                  |  ✅ **Sí**   | Endpoints de API para subir archivos a Vercel Blob y Cloudinary.              |
+| **Vercel Blob**                      |  ✅ **Sí**   | El endpoint `api/upload/blob` está implementado.                              |
+| **Cloudinary**                       |  ✅ **Sí**   | El endpoint `api/upload/cloudinary` está implementado.                        |
+| **Frontend público funcionando**     |  ✅ **Sí**   | El catálogo, carrito y flujo de pedido por WhatsApp son funcionales.          |
+| **Catálogo conectado a Firestore**   |  ❌ **No**   | El frontend público actualmente consume datos mock de `src/data/products.ts`. |
+| **Toast System instalado**           |  ✅ **Sí**   | El sistema de notificaciones está instalado y se usa en la app.               |
+| **Variables .env configuradas**      |  ✅ **Sí**   | El archivo `.env` contiene las variables para Firebase y otros servicios.     |
 
 ### 2.3. Código Clave Actual
 
 Estos son los fragmentos de código más relevantes que definen la arquitectura actual.
 
 #### `src/lib/firebase.ts` (Configuración de Firebase)
+
 ```typescript
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
@@ -112,7 +111,7 @@ if (!admin.apps.length) {
       privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
     };
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+      credential: admin.credential.cert(serviceAccount),
     });
   } catch (e) {
     console.error('Firebase admin initialization error', e);
@@ -124,6 +123,7 @@ export const adminDb = admin.firestore();
 ```
 
 #### `src/components/AdminGuard.tsx` (Protección de Rutas)
+
 ```typescript
 "use client";
 import { useEffect, useState } from "react";
@@ -142,7 +142,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
         router.push("/admin/login");
         return;
       }
-      
+
       try {
         // Forzar la actualización del token para obtener los claims más recientes.
         const tokenResult = await getIdTokenResult(user, true);
@@ -186,6 +186,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 ```
 
 #### `src/app/admin/login/page.tsx` (Login de Admin)
+
 ```typescript
 "use client";
 import { useState } from "react";
@@ -261,6 +262,7 @@ export default function Login() {
 ```
 
 #### `src/app/admin/dashboard/page.tsx` (Dashboard de Admin)
+
 ```typescript
 "use client";
 import { signOut } from "firebase/auth";
@@ -331,13 +333,22 @@ export default function Dashboard() {
 ```
 
 #### `src/components/ui/toast.tsx` (Sistema de Notificaciones)
+
 ```typescript
-"use client";
-import React, { createContext, useCallback, useContext, useMemo, useState, useEffect } from "react";
+'use client';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from 'react';
 // ... (el código del sistema de Toast es bastante extenso, pero está implementado y funciona)
 ```
 
 #### `src/app/admin/products/page.tsx` (Página para CRUD de Productos)
+
 > Este es el archivo donde se integrará la lógica para listar, editar y eliminar productos, consumiendo los endpoints de la API.
 
 ### 2.4. Objetivo Exacto del Proyecto
@@ -348,9 +359,9 @@ En resumen: **"Terminar el panel de admin y conectar el catálogo público a Fir
 
 ### 2.5. Método de Despliegue
 
-*   [x] Vercel
-*   [ ] Firebase Hosting
-*   [ ] Local por ahora
+- [x] Vercel
+- [ ] Firebase Hosting
+- [ ] Local por ahora
 
 **Proyecto en Vercel:** Sí, el proyecto está configurado para desplegarse en Vercel.
 
@@ -375,10 +386,10 @@ Esta es la estructura de datos que se usa en la aplicación y se guardará en Fi
   "rating": 4.9,
   "reviews": 128,
   "details": {
-     "origen": "Angus (USA)",
-     "maduracion": "30 días",
-     "grasa": "Marmoleo A5",
-     "corte": "Corte grueso con hueso de la costilla..."
+    "origen": "Angus (USA)",
+    "maduracion": "30 días",
+    "grasa": "Marmoleo A5",
+    "corte": "Corte grueso con hueso de la costilla..."
   },
   "pairing": "Malbec Reserva",
   "badge": "Premium",
@@ -388,14 +399,14 @@ Esta es la estructura de datos que se usa en la aplicación y se guardará en Fi
 
 ### 2.7. Definición de Atributos del Producto
 
-*   [x] **Múltiples fotos**: Sí, el modelo de datos soporta un array de imágenes.
-*   [x] **Maridaje**: Sí, el campo `pairing` está incluido.
-*   [x] **Ficha técnica**: Sí, a través del objeto anidado `details`.
-*   [x] **Termómetro de cocción**: Sí, es una funcionalidad del frontend, no requiere campo en DB.
-*   [x] **Reviews**: Sí, los campos `rating` y `reviews` están incluidos.
-*   [x] **Badge (etiqueta)**: Sí, el campo `badge` está incluido.
-*   [x] **Variantes (peso)**: Sí, se gestiona en el frontend, no requiere campo en DB.
-*   [x] **SKU único**: No, actualmente se usa el ID de Firestore, lo cual es suficiente.
+- [x] **Múltiples fotos**: Sí, el modelo de datos soporta un array de imágenes.
+- [x] **Maridaje**: Sí, el campo `pairing` está incluido.
+- [x] **Ficha técnica**: Sí, a través del objeto anidado `details`.
+- [x] **Termómetro de cocción**: Sí, es una funcionalidad del frontend, no requiere campo en DB.
+- [x] **Reviews**: Sí, los campos `rating` y `reviews` están incluidos.
+- [x] **Badge (etiqueta)**: Sí, el campo `badge` está incluido.
+- [x] **Variantes (peso)**: Sí, se gestiona en el frontend, no requiere campo en DB.
+- [x] **SKU único**: No, actualmente se usa el ID de Firestore, lo cual es suficiente.
 
 ---
 

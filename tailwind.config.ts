@@ -75,7 +75,7 @@ export default {
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'draw-path': {
-          'to': { strokeDashoffset: '0' },
+          to: { strokeDashoffset: '0' },
         },
         'toast-progress-flow': {
           from: { width: '100%' },
@@ -87,7 +87,8 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-slide': 'fade-slide 0.8s ease-out forwards',
         'draw-path': 'draw-path 0.8s cubic-bezier(0.65, 0, 0.45, 1) forwards',
-        'toast-progress': 'toast-progress-flow linear forwards var(--toast-duration)',
+        'toast-progress':
+          'toast-progress-flow linear forwards var(--toast-duration)',
       },
     },
   },

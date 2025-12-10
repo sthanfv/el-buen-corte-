@@ -19,23 +19,39 @@ export type SuggestRecipesInput = z.infer<typeof SuggestRecipesInputSchema>;
 
 const RecipeSuggestionSchema = z.object({
   recipeName: z.string().describe('The name of the suggested recipe.'),
-  ingredients: z.array(z.string()).describe('A list of ingredients required for the recipe.'),
-  instructions: z.string().describe('Step-by-step instructions for preparing the recipe.'),
+  ingredients: z
+    .array(z.string())
+    .describe('A list of ingredients required for the recipe.'),
+  instructions: z
+    .string()
+    .describe('Step-by-step instructions for preparing the recipe.'),
 });
 
 const ComplementaryProductSchema = z.object({
   productName: z.string().describe('The name of the complementary product.'),
-  reason: z.string().describe('Why this product complements the selected meat cut.'),
+  reason: z
+    .string()
+    .describe('Why this product complements the selected meat cut.'),
 });
 
 const SuggestRecipesOutputSchema = z.object({
-  recipeSuggestions: z.array(RecipeSuggestionSchema).describe('A list of suggested recipes for the selected meat cut.'),
-  preparationTips: z.array(z.string()).describe('A list of preparation tips for the selected meat cut.'),
-  complementaryProducts: z.array(ComplementaryProductSchema).describe('A list of products from the catalog that complement the selected meat cut.'),
+  recipeSuggestions: z
+    .array(RecipeSuggestionSchema)
+    .describe('A list of suggested recipes for the selected meat cut.'),
+  preparationTips: z
+    .array(z.string())
+    .describe('A list of preparation tips for the selected meat cut.'),
+  complementaryProducts: z
+    .array(ComplementaryProductSchema)
+    .describe(
+      'A list of products from the catalog that complement the selected meat cut.'
+    ),
 });
 export type SuggestRecipesOutput = z.infer<typeof SuggestRecipesOutputSchema>;
 
-export async function suggestRecipes(input: SuggestRecipesInput): Promise<SuggestRecipesOutput> {
+export async function suggestRecipes(
+  input: SuggestRecipesInput
+): Promise<SuggestRecipesOutput> {
   return suggestRecipesFlow(input);
 }
 
@@ -75,14 +91,12 @@ const suggestRecipesFlow = ai.defineFlow(
     inputSchema: SuggestRecipesInputSchema,
     outputSchema: SuggestRecipesOutputSchema,
   },
-  async input => {
+  async (input) => {
     // Populate the products data for the prompt from the product database.
     // Populate the products data for the prompt from the product database.
     // const products = PRODUCTS_DB; // Removed
     const products: any[] = []; // Placeholder until we fetch from Firestore or remove dependency
-    const {
-      output,
-    } = await prompt({
+    const { output } = await prompt({
       ...input,
       products,
     });

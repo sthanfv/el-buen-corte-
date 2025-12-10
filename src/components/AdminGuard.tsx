@@ -1,21 +1,25 @@
-"use client";
-import { useEffect, useState } from "react";
-import { auth } from "@/firebase/client"; // Corrected import
-import { onAuthStateChanged, getIdTokenResult } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import { Loader2, ChefHat } from "lucide-react";
+'use client';
+import { useEffect, useState } from 'react';
+import { auth } from '@/firebase/client'; // Corrected import
+import { onAuthStateChanged, getIdTokenResult } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { Loader2, ChefHat } from 'lucide-react';
 
-export default function AdminGuard({ children }: { children: React.ReactNode }) {
+export default function AdminGuard({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const [allow, setAllow] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        router.push("/admin/login");
+        router.push('/admin/login');
         return;
       }
-      
+
       try {
         // Forzar la actualización del token para obtener los claims más recientes.
         const tokenResult = await getIdTokenResult(user, true);
@@ -24,13 +28,13 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
         if (isAdmin) {
           setAllow(true);
         } else {
-           console.error("Acceso denegado. El usuario no es administrador.");
-           await auth.signOut();
-           router.push("/admin/login");
+          console.error('Acceso denegado. El usuario no es administrador.');
+          await auth.signOut();
+          router.push('/admin/login');
         }
       } catch (error) {
-        console.error("Error verificando el token de administrador:", error);
-        router.push("/admin/login");
+        console.error('Error verificando el token de administrador:', error);
+        router.push('/admin/login');
       }
     });
 

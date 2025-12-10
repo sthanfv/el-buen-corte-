@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { formatPrice } from '@/data/products';
@@ -22,7 +22,7 @@ export default function AnimatedPrice({ value }: AnimatedPriceProps) {
       // Ease-out quad formula for a smoother stop
       const ease = 1 - Math.pow(1 - progress, 4);
       const newDisplayValue = start + (end - start) * ease;
-      
+
       setDisplayValue(newDisplayValue);
 
       if (progress < 1) {
@@ -35,8 +35,8 @@ export default function AnimatedPrice({ value }: AnimatedPriceProps) {
     const frameId = requestAnimationFrame(animate);
 
     return () => cancelAnimationFrame(frameId);
-     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   return <>{formatPrice(displayValue)}</>;
-};
+}

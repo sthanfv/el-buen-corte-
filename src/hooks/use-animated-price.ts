@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { formatPrice } from '@/data/products';
@@ -16,7 +16,7 @@ export function useAnimatedPrice(value: number) {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const ease = 1 - Math.pow(1 - progress, 4); // Ease-out quart
-      
+
       const newDisplayValue = start + (end - start) * ease;
       setDisplayValue(newDisplayValue);
 
@@ -28,8 +28,8 @@ export function useAnimatedPrice(value: number) {
     };
 
     requestAnimationFrame(animate);
-    
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   return formatPrice(displayValue);

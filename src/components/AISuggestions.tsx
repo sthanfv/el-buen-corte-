@@ -1,8 +1,11 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { ChefHat, Loader2, ServerCrash } from 'lucide-react';
-import { suggestRecipes, type SuggestRecipesOutput } from '@/ai/flows/ai-suggested-recipes';
+import {
+  suggestRecipes,
+  type SuggestRecipesOutput,
+} from '@/ai/flows/ai-suggested-recipes';
 import { Button } from '@/components/ui/button';
 import {
   Accordion,
@@ -19,7 +22,9 @@ interface AISuggestionsProps {
 }
 
 export function AISuggestions({ meatCut }: AISuggestionsProps) {
-  const [suggestions, setSuggestions] = useState<SuggestRecipesOutput | null>(null);
+  const [suggestions, setSuggestions] = useState<SuggestRecipesOutput | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wasTriggered, setWasTriggered] = useState(false);
@@ -35,12 +40,14 @@ export function AISuggestions({ meatCut }: AISuggestionsProps) {
       setSuggestions(result);
     } catch (e) {
       console.error(e);
-      setError('Hubo un error al generar las sugerencias. Por favor, inténtalo de nuevo.');
+      setError(
+        'Hubo un error al generar las sugerencias. Por favor, inténtalo de nuevo.'
+      );
     } finally {
       setLoading(false);
     }
   };
-  
+
   const renderLoadingState = () => (
     <div className="space-y-4 mt-4">
       <Skeleton className="h-8 w-1/2" />
@@ -49,7 +56,7 @@ export function AISuggestions({ meatCut }: AISuggestionsProps) {
         <Skeleton className="h-4 w-5/6" />
       </div>
       <Skeleton className="h-8 w-1/3" />
-       <div className="space-y-2">
+      <div className="space-y-2">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-2/3" />
@@ -64,13 +71,22 @@ export function AISuggestions({ meatCut }: AISuggestionsProps) {
         Sugerencias del Chef (IA)
       </h3>
       <p className="text-sm text-muted-foreground mt-1">
-        ¿No sabes cómo preparar este corte? Deja que nuestra IA te inspire con recetas y consejos.
+        ¿No sabes cómo preparar este corte? Deja que nuestra IA te inspire con
+        recetas y consejos.
       </p>
 
       {!wasTriggered && (
-         <Button onClick={handleGetSuggestions} disabled={loading} className="mt-4 w-full sm:w-auto">
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Obtener Sugerencias'}
-         </Button>
+        <Button
+          onClick={handleGetSuggestions}
+          disabled={loading}
+          className="mt-4 w-full sm:w-auto"
+        >
+          {loading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            'Obtener Sugerencias'
+          )}
+        </Button>
       )}
 
       {loading && renderLoadingState()}
@@ -88,7 +104,9 @@ export function AISuggestions({ meatCut }: AISuggestionsProps) {
           <div>
             <h4 className="font-bold">Consejos de Preparación</h4>
             <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-              {suggestions.preparationTips.map((tip, i) => <li key={i}>{tip}</li>)}
+              {suggestions.preparationTips.map((tip, i) => (
+                <li key={i}>{tip}</li>
+              ))}
             </ul>
           </div>
 
@@ -103,12 +121,16 @@ export function AISuggestions({ meatCut }: AISuggestionsProps) {
                       <div>
                         <h5 className="font-semibold">Ingredientes:</h5>
                         <ul className="list-disc list-inside mt-1 space-y-1 text-sm">
-                          {recipe.ingredients.map((ing, j) => <li key={j}>{ing}</li>)}
+                          {recipe.ingredients.map((ing, j) => (
+                            <li key={j}>{ing}</li>
+                          ))}
                         </ul>
                       </div>
                       <div>
                         <h5 className="font-semibold">Instrucciones:</h5>
-                        <p className="text-sm whitespace-pre-wrap">{recipe.instructions}</p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {recipe.instructions}
+                        </p>
                       </div>
                     </div>
                   </AccordionContent>
@@ -119,11 +141,13 @@ export function AISuggestions({ meatCut }: AISuggestionsProps) {
 
           <div>
             <h4 className="font-bold">Productos Complementarios</h4>
-             <div className="mt-2 space-y-3">
+            <div className="mt-2 space-y-3">
               {suggestions.complementaryProducts.map((product, i) => (
                 <div key={i} className="p-3 bg-secondary rounded-lg">
                   <p className="font-semibold">{product.productName}</p>
-                  <p className="text-sm text-muted-foreground">{product.reason}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {product.reason}
+                  </p>
                 </div>
               ))}
             </div>

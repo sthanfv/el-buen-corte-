@@ -1,4 +1,3 @@
-
 export const APP_CONFIG = {
   currency: 'COP',
   locale: 'es-CO',

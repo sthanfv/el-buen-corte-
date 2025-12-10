@@ -68,11 +68,10 @@ export const Toast: React.FC<ToastProps> = ({
       onDismiss(id);
     }
   };
-  
+
   const toastStyle = {
     '--toast-duration': `${duration}ms`,
   } as React.CSSProperties;
-
 
   return (
     <div
@@ -124,7 +123,10 @@ export const Toast: React.FC<ToastProps> = ({
 
       <div className="h-1 bg-black rounded-b-xl overflow-hidden">
         <div
-          className={cn('h-full opacity-80 toast-progress-bar', PROGRESS_COLORS[type])}
+          className={cn(
+            'h-full opacity-80 toast-progress-bar',
+            PROGRESS_COLORS[type]
+          )}
         ></div>
       </div>
     </div>

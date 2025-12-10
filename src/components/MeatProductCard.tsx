@@ -100,7 +100,11 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
 
     setCartState('loading');
     setTimeout(() => {
-      onAddToCart({ ...product, selectedWeight: weight, finalPrice: totalPrice });
+      onAddToCart({
+        ...product,
+        selectedWeight: weight,
+        finalPrice: totalPrice,
+      });
       setCartState('success');
       setTimeout(() => setCartState('idle'), 2000);
     }, 800);
@@ -231,9 +235,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                 onClick={() => carouselApi?.scrollTo(idx)}
                 className={cn(
                   'h-1.5 rounded-full transition-all duration-500 shadow-sm',
-                  currentSlide === idx
-                    ? 'bg-white w-6'
-                    : 'bg-white/50 w-1.5'
+                  currentSlide === idx ? 'bg-white w-6' : 'bg-white/50 w-1.5'
                 )}
               ></button>
             ))}
@@ -277,8 +279,8 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
             </SheetTrigger>
           </div>
           <p className="text-muted-foreground text-sm mb-6 leading-relaxed font-medium">
-            {product.details.corte}. Sabor excepcional gracias a su maduración de{' '}
-            {product.details.maduracion}.
+            {product.details.corte}. Sabor excepcional gracias a su maduración
+            de {product.details.maduracion}.
           </p>
 
           <div className="bg-secondary/50 rounded-2xl p-4 mb-6 border hover:border-border transition-colors mt-auto">
@@ -316,11 +318,12 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                 <div
                   className="h-full bg-gradient-to-r from-primary to-red-600 rounded-full transition-all duration-300 relative"
                   style={{
-                    width: `${((weight - APP_CONFIG.minWeightPerItem) /
-                      (APP_CONFIG.maxWeightPerItem -
-                        APP_CONFIG.minWeightPerItem)) *
+                    width: `${
+                      ((weight - APP_CONFIG.minWeightPerItem) /
+                        (APP_CONFIG.maxWeightPerItem -
+                          APP_CONFIG.minWeightPerItem)) *
                       100
-                      }%`,
+                    }%`,
                   }}
                 >
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-white/30 rounded-full mr-1"></div>

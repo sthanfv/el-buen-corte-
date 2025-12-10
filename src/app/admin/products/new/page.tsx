@@ -28,7 +28,9 @@ const productSchema = z.object({
     .number()
     .positive('El precio debe ser un número positivo.'),
   stock: z.coerce.number().int().min(0, 'El stock no puede ser negativo.'),
-  image: z.any().refine((files) => files?.length === 1, 'La imagen es requerida.'),
+  image: z
+    .any()
+    .refine((files) => files?.length === 1, 'La imagen es requerida.'),
   origen: z.string().optional(),
   maduracion: z.string().optional(),
   grasa: z.string().optional(),
@@ -63,24 +65,25 @@ export default function NewProductPage() {
     try {
       // 1. Get Token FIRST
       const idToken = await auth.currentUser?.getIdToken();
-      if (!idToken) throw new Error("No estás autenticado.");
+      if (!idToken) throw new Error('No estás autenticado.');
 
       // 2. Upload image with Auth Header
       const file = data.image[0] as File;
       const formData = new FormData();
       formData.append('file', file);
 
-      const uploadRes = await fetch("/api/upload/blob", {
-        method: "POST",
+      const uploadRes = await fetch('/api/upload/blob', {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${idToken}`
+          Authorization: `Bearer ${idToken}`,
         },
-        body: formData
+        body: formData,
       });
 
       if (!uploadRes.ok) {
-        if (uploadRes.status === 401) throw new Error("Sesión expirada. Recarga la página.");
-        throw new Error("Fallo en la subida de la imagen.");
+        if (uploadRes.status === 401)
+          throw new Error('Sesión expirada. Recarga la página.');
+        throw new Error('Fallo en la subida de la imagen.');
       }
       const { url } = await uploadRes.json();
 
@@ -109,14 +112,12 @@ export default function NewProductPage() {
         badge: data.badge || '',
       };
 
-
-
       // 3. Call create product API endpoint
       const createRes = await fetch('/api/products/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify(productData),
       });
@@ -138,7 +139,9 @@ export default function NewProductPage() {
         type: 'error',
         title: 'Error al Crear',
         message:
-          error instanceof Error ? error.message : 'No se pudo crear el producto.',
+          error instanceof Error
+            ? error.message
+            : 'No se pudo crear el producto.',
       });
     } finally {
       setIsLoading(false);
@@ -193,7 +196,11 @@ export default function NewProductPage() {
                   <FormItem>
                     <FormLabel>Precio por Kg</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Ej: 125000" {...field} />
+                      <Input
+                        type="number"
+                        placeholder="Ej: 125000"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -249,7 +256,10 @@ export default function NewProductPage() {
                 <FormItem>
                   <FormLabel>Descripción del Corte</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ej: Corte grueso con hueso de la costilla..." {...field} />
+                    <Input
+                      placeholder="Ej: Corte grueso con hueso de la costilla..."
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

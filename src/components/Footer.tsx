@@ -73,8 +73,11 @@ export default function Footer() {
                 Club de Suscripción
               </a>
             </li>
-             <li>
-              <Link href="/admin/products/new" className="hover:text-primary transition-colors">
+            <li>
+              <Link
+                href="/admin/products/new"
+                className="hover:text-primary transition-colors"
+              >
                 Admin Panel
               </Link>
             </li>

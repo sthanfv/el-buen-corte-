@@ -67,7 +67,7 @@ export default function ProductsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({ id }),
       });
@@ -89,7 +89,10 @@ export default function ProductsPage() {
       toast({
         type: 'error',
         title: 'Error al Eliminar',
-        message: error instanceof Error ? error.message : 'No se pudo eliminar el producto.',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'No se pudo eliminar el producto.',
       });
     }
   }
@@ -135,7 +138,9 @@ export default function ProductsPage() {
         ) : products.length === 0 ? (
           <div className="text-center py-20 bg-gray-100 dark:bg-gray-800/50 rounded-xl border border-dashed">
             <h3 className="text-xl font-bold">No hay productos</h3>
-            <p className="text-muted-foreground mt-2">Empieza añadiendo tu primer producto al catálogo.</p>
+            <p className="text-muted-foreground mt-2">
+              Empieza añadiendo tu primer producto al catálogo.
+            </p>
             <Link href="/admin/products/new" passHref>
               <Button className="mt-4">
                 <Plus className="mr-2 h-4 w-4" />
@@ -143,7 +148,6 @@ export default function ProductsPage() {
               </Button>
             </Link>
           </div>
-
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((p) => (
@@ -158,7 +162,9 @@ export default function ProductsPage() {
                     </div>
                     <div className="relative w-16 h-16 rounded-md overflow-hidden border">
                       <Image
-                        src={p.images?.[0]?.src || 'https://placehold.co/100x100'}
+                        src={
+                          p.images?.[0]?.src || 'https://placehold.co/100x100'
+                        }
                         alt={p.images?.[0]?.alt || p.name}
                         fill
                         className="object-cover"
@@ -196,8 +202,8 @@ export default function ProductsPage() {
                         <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                         <AlertDialogDescription>
                           Esta acción no se puede deshacer. Esto eliminará
-                          permanentemente el producto &quot;{p.name}&quot; de la base de
-                          datos.
+                          permanentemente el producto &quot;{p.name}&quot; de la
+                          base de datos.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

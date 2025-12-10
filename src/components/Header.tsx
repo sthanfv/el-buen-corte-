@@ -12,7 +12,7 @@ interface HeaderProps {
   onCartClick: () => void;
 }
 
-import { ModeToggle } from "@/components/ModeToggle"
+import { ModeToggle } from '@/components/ModeToggle';
 
 interface HeaderProps {
   searchTerm: string;
@@ -64,7 +64,10 @@ export default function Header({
             onClick={onCartClick}
             className="relative p-3 rounded-xl transition-colors group"
           >
-            <ShoppingBag size={24} className="text-gray-700 group-hover:text-black dark:text-gray-200 dark:group-hover:text-white" />
+            <ShoppingBag
+              size={24}
+              className="text-gray-700 group-hover:text-black dark:text-gray-200 dark:group-hover:text-white"
+            />
             {cartCount > 0 && (
               <Badge
                 variant="destructive"
@@ -73,9 +76,7 @@ export default function Header({
                 {cartCount}
               </Badge>
             )}
-            <span className="sr-only">
-              Abrir carrito, {cartCount} items
-            </span>
+            <span className="sr-only">Abrir carrito, {cartCount} items</span>
           </Button>
         </div>
       </div>

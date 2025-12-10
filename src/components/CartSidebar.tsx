@@ -79,7 +79,8 @@ export default function OrderSidebar({
       `*Datos del Cliente:*\n` +
       `*Nombre:* ${data.name}\n` +
       `*Dirección:* ${data.address}\n` +
-      `*Método de Pago:* ${data.paymentMethod === 'efectivo' ? 'Efectivo' : 'Transferencia'
+      `*Método de Pago:* ${
+        data.paymentMethod === 'efectivo' ? 'Efectivo' : 'Transferencia'
       }\n\n`;
 
     const orderDetails =
@@ -95,7 +96,9 @@ export default function OrderSidebar({
       `\n\n`;
 
     const totalLine = `*TOTAL: ${formatPrice(total)}*`;
-    return encodeURIComponent(header + clientDetails + orderDetails + totalLine);
+    return encodeURIComponent(
+      header + clientDetails + orderDetails + totalLine
+    );
   };
 
   const onSubmit = async (data: OrderFormValues) => {
@@ -105,24 +108,27 @@ export default function OrderSidebar({
         customerName: data.name,
         customerAddress: data.address,
         paymentMethod: data.paymentMethod,
-        items: order.map(item => ({
+        items: order.map((item) => ({
           id: item.id,
           name: item.name,
           selectedWeight: item.selectedWeight,
           finalPrice: item.finalPrice,
-          pricePerKg: item.price
+          pricePerKg: item.price,
         })),
         total: total,
       };
 
       // 2. Save to Backend (Optimistic: don't block user if fails, but log it)
       // Actually, we should block slightly to ensure we have the record.
-      toast({ title: 'Procesando...', message: 'Generando tu pedido para WhatsApp...' });
+      toast({
+        title: 'Procesando...',
+        message: 'Generando tu pedido para WhatsApp...',
+      });
 
       const res = await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
+        body: JSON.stringify(orderPayload),
       });
 
       if (!res.ok) {
@@ -146,10 +152,12 @@ export default function OrderSidebar({
       form.reset();
       setOrder([]);
       onClose();
-
     } catch (error) {
       console.error('Error in checkout', error);
-      toast({ type: 'error', message: 'Hubo un problema iniciando el pedido.' });
+      toast({
+        type: 'error',
+        message: 'Hubo un problema iniciando el pedido.',
+      });
     }
   };
 
@@ -246,7 +254,10 @@ export default function OrderSidebar({
                     <FormItem>
                       <FormLabel>Dirección de Entrega</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: Calle 5 # 10-15, Apto 201" {...field} />
+                        <Input
+                          placeholder="Ej: Calle 5 # 10-15, Apto 201"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

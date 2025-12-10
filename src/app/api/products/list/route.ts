@@ -9,7 +9,7 @@ export async function GET() {
     const snapshot = await adminDb.collection('products').get();
 
     // 2. Map and validation
-    const products = snapshot.docs.map(doc => {
+    const products = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -25,9 +25,9 @@ export async function GET() {
 
     return NextResponse.json(products);
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error('Error fetching products:', error);
     return NextResponse.json(
-      { error: "Error interno al obtener el catálogo." },
+      { error: 'Error interno al obtener el catálogo.' },
       { status: 500 }
     );
   }

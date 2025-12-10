@@ -37,7 +37,9 @@ try {
   const uid = process.env.NEXT_PUBLIC_ADMIN_UID;
 
   if (!uid) {
-    throw new Error('La variable de entorno NEXT_PUBLIC_ADMIN_UID no está definida.');
+    throw new Error(
+      'La variable de entorno NEXT_PUBLIC_ADMIN_UID no está definida.'
+    );
   }
 
   admin
