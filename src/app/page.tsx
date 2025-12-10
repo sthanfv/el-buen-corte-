@@ -8,7 +8,6 @@ import Hero from '@/components/Hero';
 import TrustSection from '@/components/TrustSection';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
-// import { PRODUCTS_DB } from '@/data/products'; // Eliminado: Ya no usamos datos falsos
 import FilterButtons from '@/components/FilterButtons';
 
 export default function Home() {
@@ -28,7 +27,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState('Todos');
   const { toast } = useToast();
 
-  // Hook para cargar productos al iniciar
+  // Hook: Carga de productos desde base de datos (Firestore)
   useEffect(() => {
     async function fetchProducts() {
       try {
@@ -37,7 +36,6 @@ export default function Home() {
         const data = await response.json();
         setProducts(data);
       } catch (error) {
-        console.error("Error conectando con la base de datos:", error);
         toast({ type: 'error', message: 'No se pudo cargar el catálogo.' });
       } finally {
         setIsLoading(false);

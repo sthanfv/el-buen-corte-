@@ -1,17 +1,34 @@
-import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebase";
+import { NextResponse } from 'next/server';
+import { adminDb } from '@/lib/firebase';
+
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
-    const snap = await adminDb.collection("products").orderBy("createdAt", "desc").get();
+    // 1. Reference to 'products' collection
+    const snapshot = await adminDb.collection('products').get();
 
-    const items = snap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    }));
+    // 2. Map and validation
+    const products = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Ensure critical fields exist or fallback
+        stock: data.stock ?? 0,
+        images: data.images || [],
+      };
+    });
 
-    return NextResponse.json(items);
-  } catch (e: any) {
-    console.error("Error in /api/products/list:", e);
-    return NextResponse.json({ error: e.message || "Something went wrong" }, { status: 500 });
+    // 3. Filter strictly for public view if needed (e.g. active only)
+    // For now, return all (user requirement: see real products)
+
+    return NextResponse.json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return NextResponse.json(
+      { error: "Error interno al obtener el catálogo." },
+      { status: 500 }
+    );
   }
 }
