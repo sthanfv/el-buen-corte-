@@ -109,7 +109,7 @@ export default function NewProductPage() {
         badge: data.badge || '',
       };
 
-      const idToken = await auth.currentUser?.getIdToken();
+
 
       // 3. Call create product API endpoint
       const createRes = await fetch('/api/products/create', {
