@@ -1,5 +1,6 @@
 'use client';
 import { ToastProvider } from '@/components/ui/toast';
+import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
@@ -28,7 +29,14 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <ToastProvider>{children}</ToastProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ToastProvider>{children}</ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
