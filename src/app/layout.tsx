@@ -1,5 +1,7 @@
 'use client';
 import { ToastProvider } from '@/components/ui/toast';
+import { CartProvider } from '@/components/cart-provider';
+import { SalesBot } from '@/components/SalesBot';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 import { Inter } from 'next/font/google';
@@ -33,10 +35,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ToastProvider>{children}</ToastProvider>
+          <CartProvider>
+            <ToastProvider>
+              {children}
+              <SalesBot />
+            </ToastProvider>
+          </CartProvider>
         </ThemeProvider>
         <Analytics />
       </body>
-    </html>
+    </html >
   );
 }

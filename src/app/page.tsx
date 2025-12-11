@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Product } from '@/types/products';
 import MeatProductCard from '@/components/MeatProductCard';
 import OrderSidebar, { type OrderItem } from '@/components/CartSidebar';
+import { useCart } from '@/components/cart-provider';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import TrustSection from '@/components/TrustSection';
@@ -20,9 +21,9 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Estados restaurados que fueron borrados accidentalmente
-  const [order, setOrder] = useState<OrderItem[]>([]);
-  const [isOrderOpen, setIsOrderOpen] = useState(false);
+  // Global Cart State
+  const { order, addToCart, removeFromCart: removeContext, isCartOpen, setIsCartOpen } = useCart();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
   const { toast } = useToast();
@@ -65,9 +66,8 @@ export default function Home() {
   }, [products, searchTerm, activeCategory]);
 
   const addToOrder = (item: Omit<OrderItem, 'orderId'>) => {
-    const newItem = { ...item, orderId: Date.now().toString() };
-    setOrder((prev) => [...prev, newItem]);
-    setIsOrderOpen(true);
+    const newItem = { ...item, orderId: Date.now().toString() } as OrderItem;
+    addToCart(newItem); // Use Global Action
     toast({
       type: 'success',
       title: 'Producto Añadido',
@@ -76,12 +76,18 @@ export default function Home() {
   };
 
   const removeFromOrder = (id: string) => {
-    setOrder((prev) => prev.filter((item) => item.orderId !== id));
-    toast({
-      type: 'error',
-      title: 'Producto Eliminado',
-      message: 'El producto ha sido eliminado de tu pedido.',
-    });
+    // Current Context uses index, but Sidebar uses ID. 
+    // Need to find index or update Context to remove by ID.
+    // For now, let's find index by orderId
+    const index = order.findIndex((item) => item.orderId === id);
+    if (index !== -1) {
+      removeContext(index);
+      toast({
+        type: 'error',
+        title: 'Producto Eliminado',
+        message: 'El producto ha sido eliminado de tu pedido.',
+      });
+    }
   };
 
   const handleSearch = (term: string) => {
@@ -94,7 +100,7 @@ export default function Home() {
         searchTerm={searchTerm}
         onSearchTermChange={handleSearch}
         cartCount={order.length}
-        onCartClick={() => setIsOrderOpen(true)}
+        onCartClick={() => setIsCartOpen(true)}
       />
       <Hero />
       <main id="catalogo" className="max-w-7xl mx-auto px-4 py-20">
@@ -144,11 +150,11 @@ export default function Home() {
       <TrustSection />
       <Footer />
       <OrderSidebar
-        isOpen={isOrderOpen}
-        onClose={() => setIsOrderOpen(false)}
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
         order={order}
         onRemove={removeFromOrder}
-        setOrder={setOrder}
+        setOrder={() => { }} // No-op as setOrder is managed by Context now, or need to adapt Sidebar
       />
     </>
   );

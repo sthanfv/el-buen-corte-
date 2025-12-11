@@ -18,3 +18,9 @@ export interface Product {
   badge: string;
   createdAt?: Timestamp;
 }
+
+export interface OrderItem extends Product {
+  quantity: number;
+  weight: number; // in kg
+  totalPrice: number;
+}
