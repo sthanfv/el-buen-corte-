@@ -23,15 +23,15 @@ Cierre del ciclo de venta profesional sin costo.
 
 ---
 
-## 👁️ FASE 2: "El Observador Silencioso" (AI Sales Assistant)
-*Objetivo: El Bot que vende sin que el usuario sepa.*
+## 👁️ FASE 2: Personalización Contextual (Asistente de Navegación)
+*Objetivo: Mejorar la conversión mediante sugerencias basadas en la sesión activa.*
 
-> "Un vendedor invisible que no incomoda, pero siempre está atento."
+> "Un asistente que ofrece contexto relevante basándose únicamente en la navegación actual del usuario."
 
-### ¿Qué hace el Bot?
-1.  **Rastreo Anónimo (Shadow Profiles)**:
-    - No necesitamos registro (Login). Usamos **Cookies de Primera Parte** y **Huella Digital** para asignar un ID único a cada visitante.
-    - *Ejemplo*: "Usuario Anónimo #582 ha visto 3 veces la sección de Cerdo y se detuvo 30 segundos en las Costillas".
+### Funcionamiento Técnico
+1.  **Analítica de Sesión Activa**:
+    - No requiere registro. Basado en **Métricas de Interacción** en tiempo real para ofrecer una experiencia personalizada durante la visita.
+    - *Ejemplo*: "Un visitante ha mostrado interés recurrente en la sección de Cerdo; el asistente puede ofrecer información sobre disponibilidad de costillas".
 
 2.  **Motor de Recomendación (El Algoritmo)**:
     - Si el usuario duda (mueve el mouse erráticamente o hace scroll arriba/abajo), el Bot activa un "empujón".
@@ -65,4 +65,4 @@ Cierre del ciclo de venta profesional sin costo.
 ---
 
 ### Resumen Técnico para Inversión
-> "El Buen Corte no es una tienda estática. Integra un **Agente de Ventas IA** que analiza el comportamiento del usuario en tiempo real para personalizar la oferta, aumentando la conversión sin invadir la privacidad, utilizando perfiles anónimos persistentes."
+> "El Buen Corte optimiza la conversión mediante un **Asistente Contextual** que analiza el comportamiento de navegación en tiempo real para personalizar la oferta de manera ética, utilizando analítica de sesión para mejorar la experiencia del usuario sin comprometer datos personales identificables."

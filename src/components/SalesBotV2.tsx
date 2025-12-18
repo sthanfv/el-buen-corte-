@@ -12,6 +12,7 @@ import { Product } from '@/types/products';
 import { SalesBotEngine } from '@/lib/salesbot-engine';
 import { SalesBotContext, SalesBotMessage } from '@/types/salesbot';
 import { SALESBOT_ACTIONS } from '@/lib/salesbot-messages';
+import { isFeatureEnabled } from '@/lib/features';
 
 const ICON_MAP: Record<string, LucideIcon> = {
     sparkles: Sparkles,
@@ -25,7 +26,7 @@ export function SalesBotV2() {
     const { logEvent } = useActivityTracker();
     const pathname = usePathname();
     const router = useRouter();
-    const { order, addProduct } = useCart();
+    const { order, addToCart } = useCart();
 
     const [isVisible, setIsVisible] = useState(false);
     const [currentMessage, setCurrentMessage] = useState<SalesBotMessage | null>(null);
@@ -45,7 +46,7 @@ export function SalesBotV2() {
                 currentCategory: null,
                 viewedProducts: [],
                 cartItems: order,
-                totalCartValue: order.reduce((sum, item) => sum + (item.finalPrice || 0), 0),
+                totalCartValue: order.reduce((sum, item) => sum + (item.totalPrice || 0), 0),
                 isFirstVisit: !localStorage.getItem('bc_last_visit'),
                 previousProduct: null,
             };
@@ -63,7 +64,7 @@ export function SalesBotV2() {
         if (botEngine) {
             botEngine.updateContext({
                 cartItems: order,
-                totalCartValue: order.reduce((sum, item) => sum + (item.finalPrice || 0), 0),
+                totalCartValue: order.reduce((sum, item) => sum + (item.totalPrice || 0), 0),
             });
         }
     }, [order, botEngine]);
@@ -142,7 +143,14 @@ export function SalesBotV2() {
         if (actionType === SALESBOT_ACTIONS.ADD_TO_CART && botEngine) {
             const context = (botEngine as any).context as SalesBotContext;
             if (context.currentProduct) {
-                addProduct(context.currentProduct);
+                // Convert Product to OrderItem for the cart
+                const orderItem: any = {
+                    ...context.currentProduct,
+                    quantity: 1,
+                    weight: 1, // Default or previous selection
+                    totalPrice: context.currentProduct.pricePerKg
+                };
+                addToCart(orderItem);
                 setIsVisible(false);
             }
             return;
@@ -161,7 +169,7 @@ export function SalesBotV2() {
         }
 
         setIsVisible(false);
-    }, [botEngine, router, addProduct]);
+    }, [botEngine, router, addToCart]);
 
     const dismiss = () => setIsVisible(false);
 
@@ -169,10 +177,13 @@ export function SalesBotV2() {
     useEffect(() => {
         if (typeof window !== 'undefined' && botEngine) {
             (window as any).salesBotSetProduct = async (product: Product) => {
-                botEngine.updateContext({
-                    currentProduct: product,
-                    currentCategory: product.category,
-                });
+                const orderItem: any = {
+                    ...product,
+                    quantity: 1,
+                    weight: 1,
+                    totalPrice: product.pricePerKg
+                };
+                addToCart(orderItem);
             };
 
             (window as any).salesBotTrackView = async (product: Product) => {
@@ -186,7 +197,7 @@ export function SalesBotV2() {
         }
     }, [botEngine]);
 
-    if (!isVisible || !currentMessage) return null;
+    if (!isFeatureEnabled('salesBotV2') || !isVisible || !currentMessage) return null;
 
     const IconComponent = ICON_MAP[currentMessage.icon] || Sparkles;
 
@@ -201,12 +212,12 @@ export function SalesBotV2() {
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-2xl p-4 flex flex-col gap-3 backdrop-blur-sm bg-opacity-95">
                     <div className="flex items-start gap-3">
                         <div className={`p-2 rounded-full shrink-0 ${currentMessage.icon === 'alert'
-                                ? 'bg-red-100 dark:bg-red-900/30'
-                                : 'bg-primary/10'
+                            ? 'bg-red-100 dark:bg-red-900/30'
+                            : 'bg-primary/10'
                             }`}>
                             <IconComponent className={`h-6 w-6 ${currentMessage.icon === 'alert'
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-primary'
+                                ? 'text-red-600 dark:text-red-400'
+                                : 'text-primary'
                                 }`} />
                         </div>
                         <div className="flex-1 space-y-2">

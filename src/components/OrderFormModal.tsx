@@ -29,6 +29,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/firebase/client';
+import { signInAnonymously } from 'firebase/auth';
 
 interface Props {
     isOpen: boolean;
@@ -41,6 +42,8 @@ interface Props {
 export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Props) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
+    const [orderId, setOrderId] = useState<string | null>(null);
+    const [idempotencyKey] = useState(() => crypto.randomUUID());
 
     const form = useForm<CustomerInfo>({
         resolver: zodResolver(CustomerInfoSchema),
@@ -60,12 +63,17 @@ export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Pro
         setIsSubmitting(true);
 
         try {
+            // ✅ SECURITY: Ensure user is authenticated (Anonymous Auth)
+            if (!auth.currentUser) {
+                await signInAnonymously(auth);
+            }
             // ✅ SECURITY: Get Firebase auth token
             const idToken = await auth.currentUser?.getIdToken();
 
             // Prepare order payload
             const orderPayload = {
                 customerInfo: data,
+                idempotencyKey, // ✅ Track request for idempotency
                 items: order.map((item) => ({
                     id: item.id || item.orderId,
                     name: item.name,
@@ -76,7 +84,7 @@ export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Pro
                     imageUrl: item.images?.[0]?.src,
                 })),
                 total,
-                paymentMethod: 'efectivo' as const, // You can add this field to the form if needed
+                paymentMethod: 'efectivo' as const,
             };
 
             // ✅ SECURITY: Call secure API endpoint
@@ -95,42 +103,72 @@ export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Pro
             }
 
             const result = await response.json();
+            setOrderId(result.id);
 
             // Show success message
             toast({
-                title: '¡Pedido creado!',
-                description: `Ticket #${result.orderNumber} generado`,
+                title: '¡Pedido recibido!',
+                description: `ID: ${result.id.slice(0, 8).toUpperCase()}`,
             });
 
-            // ✅ Open WhatsApp with the secure URL from server
+            // ✅ Open WhatsApp if URL available
             if (result.whatsappURL) {
                 window.open(result.whatsappURL, '_blank');
             }
 
-            // Clear form and close
-            form.reset();
             onSuccess();
         } catch (error) {
             console.error('Order error:', error);
-
-            // Handle rate limit error
-            if ((error as Error).message.includes('límite')) {
-                toast({
-                    title: 'Límite alcanzado',
-                    description: (error as Error).message,
-                    variant: 'destructive',
-                });
-            } else {
-                toast({
-                    title: 'Error',
-                    description: 'No se pudo procesar tu pedido. Intenta nuevamente.',
-                    variant: 'destructive',
-                });
-            }
+            toast({
+                title: 'Error',
+                description: (error as Error).message || 'No se pudo procesar tu pedido.',
+                variant: 'destructive',
+            });
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    if (orderId) {
+        return (
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="sm:max-w-[500px] text-center p-12">
+                    <div className="flex flex-col items-center gap-6">
+                        <div className="bg-green-100 p-4 rounded-full">
+                            <CheckCircle2 className="h-12 w-12 text-green-600" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-black">¡Pedido en Marcha!</h2>
+                            <p className="text-muted-foreground">
+                                Tu pedido <span className="font-mono font-bold text-primary">#{orderId.slice(0, 8).toUpperCase()}</span> ha sido registrado con éxito.
+                            </p>
+                        </div>
+
+                        <div className="bg-primary/5 p-4 rounded-lg w-full text-sm text-left border border-primary/10">
+                            <p className="font-semibold mb-1">¿Qué sigue?</p>
+                            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                                <li>Recibirás un correo de confirmación.</li>
+                                <li>Te contactaremos por WhatsApp para coordinar.</li>
+                                <li>Puedes ver el estado en tiempo real.</li>
+                            </ul>
+                        </div>
+
+                        <div className="flex flex-col gap-3 w-full">
+                            <Button
+                                onClick={() => window.open(`/api/orders/status/${orderId}`, '_blank')}
+                                variant="outline"
+                            >
+                                Ver Estado del Pedido
+                            </Button>
+                            <Button onClick={onClose}>
+                                Volver a la Tienda
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        );
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>

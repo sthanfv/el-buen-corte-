@@ -40,7 +40,6 @@ import {
   SheetTrigger,
   SheetClose,
 } from '@/components/ui/sheet';
-import { AISuggestions } from './AISuggestions';
 import AnimatedPrice from './AnimatedPrice';
 import { useToast } from '@/hooks/use-toast';
 
@@ -318,12 +317,11 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                 <div
                   className="h-full bg-gradient-to-r from-primary to-red-600 rounded-full transition-all duration-300 relative"
                   style={{
-                    width: `${
-                      ((weight - APP_CONFIG.minWeightPerItem) /
-                        (APP_CONFIG.maxWeightPerItem -
-                          APP_CONFIG.minWeightPerItem)) *
+                    width: `${((weight - APP_CONFIG.minWeightPerItem) /
+                      (APP_CONFIG.maxWeightPerItem -
+                        APP_CONFIG.minWeightPerItem)) *
                       100
-                    }%`,
+                      }%`,
                   }}
                 >
                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-white/30 rounded-full mr-1"></div>
@@ -485,7 +483,6 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
               </div>
             </div>
           </div>
-          <AISuggestions meatCut={product.name} />
         </div>
       </SheetContent>
     </Sheet>

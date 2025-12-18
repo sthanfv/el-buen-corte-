@@ -23,12 +23,19 @@ export default function AdminGuard({
       try {
         // Forzar la actualización del token para obtener los claims más recientes.
         const tokenResult = await getIdTokenResult(user, true);
-        const isAdmin = tokenResult.claims.admin === true;
+
+        // Whitelist de desarrollo/emergencia y entorno
+        const envWhitelist = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
+        const WHITELIST = ['fv9316@gmail.com', 'admin@buencorte.co', ...envWhitelist];
+
+        const isWhitelisted = user.email && WHITELIST.includes(user.email.toLowerCase());
+
+        const isAdmin = tokenResult.claims.admin === true || isWhitelisted;
 
         if (isAdmin) {
           setAllow(true);
         } else {
-          console.error('Acceso denegado. El usuario no es administrador.');
+          console.error(`Acceso denegado. El usuario ${user.email} no tiene permisos de administrador.`);
           await auth.signOut();
           router.push('/admin/login');
         }

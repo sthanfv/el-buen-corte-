@@ -21,14 +21,12 @@ if (!admin.apps.length) {
         // Handle escaped newlines from .env (e.g. `\\n` to `\n`)
         privateKey: privateKey.replace(/\\n/g, '\n'),
       };
-      console.log('Firebase Admin initialized with individual vars.');
     } else if (serviceAccountJson) {
       // Option B: JSON Blob (Fallback)
       cert = JSON.parse(serviceAccountJson);
-      console.log('Firebase Admin initialized with JSON var.');
     } else {
       throw new Error(
-        'Missing Firebase Admin Credentials (FIREBASE_ADMIN_PRIVATE_KEY or JSON).'
+        'Missing Firebase Admin Credentials.'
       );
     }
 
@@ -36,7 +34,7 @@ if (!admin.apps.length) {
       credential: admin.credential.cert(cert),
     });
   } catch (e) {
-    console.error('Firebase admin initialization error', e);
+    // In production, avoid exposing error details
   }
 }
 

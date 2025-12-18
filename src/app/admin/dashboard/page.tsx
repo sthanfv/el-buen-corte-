@@ -6,7 +6,7 @@ import Link from 'next/link';
 import AdminGuard from '@/components/AdminGuard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Package, ShoppingBag, ArrowRight, Settings } from 'lucide-react';
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -28,9 +28,7 @@ export default function Dashboard() {
               Gestiona tu negocio desde un solo lugar.
             </p>
           </div>
-          <Button onClick={logout} variant="destructive">
-            Cerrar sesión
-          </Button>
+
         </div>
 
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
@@ -58,8 +56,21 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Button asChild className="w-full" disabled>
+              <Button asChild className="w-full">
                 <Link href="/admin/orders">Ver Pedidos</Link>
+              </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                Configuración
+                <Settings className="text-muted-foreground" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="secondary" className="w-full">
+                <Link href="/admin/settings">Editar Sitio</Link>
               </Button>
             </CardContent>
           </Card>

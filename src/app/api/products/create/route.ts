@@ -18,9 +18,6 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-
-    // Validation Schema used from imports
-
     const validatedData = ProductSchema.parse(body);
 
     const ref = await adminDb.collection('products').add({
@@ -30,9 +27,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ id: ref.id });
   } catch (e: any) {
-    console.error('Error in /api/products/create:', e);
+    if (e.name === 'ZodError') {
+      return NextResponse.json({ error: 'Datos de producto inválidos' }, { status: 400 });
+    }
     return NextResponse.json(
-      { error: e.message || 'Something went wrong' },
+      { error: 'Error al crear el producto' },
       { status: 500 }
     );
   }

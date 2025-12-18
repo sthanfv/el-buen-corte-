@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase';
 import { headers } from 'next/headers';
 import { put } from '@vercel/blob';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,26 +18,29 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: Request) {
-  console.log('POST /api/upload/blob - Start');
   try {
     // 1. Security Check: Verify Admin Token
     const headersList = await headers();
     const authorization = headersList.get('Authorization');
+    const ip = headersList.get('x-forwarded-for') || 'unknown';
+
     if (!authorization?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      logger.audit('Unauthorized upload attempt: Missing token', { ip, endpoint: '/api/upload/blob' });
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
     const idToken = authorization.split('Bearer ')[1];
 
     try {
       const decodedToken = await adminAuth.verifyIdToken(idToken);
       if (decodedToken.admin !== true) {
-        // Strict check: Only actual admins can upload
-        // return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        // ✅ SECURITY: Strict check: Only actual admins can upload
+        logger.audit('Forbidden upload attempt: Non-admin user', { ip, uid: decodedToken.uid, endpoint: '/api/upload/blob' });
+        return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
       }
     } catch (authError) {
-      console.error('Auth verification failed:', authError);
+      logger.audit('Unauthorized upload attempt: Invalid token', { ip, endpoint: '/api/upload/blob' });
       return NextResponse.json(
-        { error: 'Unauthorized: Invalid Token' },
+        { error: 'Sesión inválida o expirada' },
         { status: 401 }
       );
     }
@@ -45,24 +49,38 @@ export async function POST(req: Request) {
     const file = data.get('file') as File;
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return NextResponse.json({ error: 'No se proporcionó ningún archivo' }, { status: 400 });
     }
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Only images are allowed' }, { status: 400 });
+
+    // ✅ SECURITY: Strict MIME type validation
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      logger.warn('Blocked file upload: Invalid MIME type', { type: file.type, ip });
+      return NextResponse.json({
+        error: `Tipo de archivo no permitido. Solo se permiten imágenes (JPG, PNG, WEBP, GIF).`
+      }, { status: 400 });
+    }
+
+    // ✅ SECURITY: File size limit (5MB)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      logger.warn('Blocked file upload: Size limit exceeded', { size: file.size, ip });
+      return NextResponse.json({
+        error: `El archivo es demasiado grande. Máximo permitido: 5MB.`
+      }, { status: 400 });
     }
 
     // 2. Upload using Vercel Blob SDK
-    // SDK automatically uses BLOB_READ_WRITE_TOKEN from env
     const blob = await put(file.name, file, {
       access: 'public',
-      addRandomSuffix: true, // Prevents overwrites
+      addRandomSuffix: true,
     });
 
-    console.log(`Upload Success: ${blob.url}`);
-
+    logger.info('File uploaded successfully', { url: blob.url, ip });
     return NextResponse.json({ url: blob.url });
   } catch (e) {
-    console.error('Upload Error:', e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    // ✅ SECURITY: Sanitize error response
+    logger.error('Unexpected error in upload API', { error: e });
+    return NextResponse.json({ error: 'Error interno al procesar la carga de imagen' }, { status: 500 });
   }
 }

@@ -44,11 +44,11 @@ interface TicketsSummary {
 }
 
 const STATUS_COLORS = {
-    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    preparing: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-    delivered: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    pending: 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50',
+    confirmed: 'bg-blue-500/20 text-blue-500 border border-blue-500/50',
+    preparing: 'bg-purple-500/20 text-purple-500 border border-purple-500/50',
+    delivered: 'bg-green-500/20 text-green-500 border border-green-500/50',
+    cancelled: 'bg-red-500/20 text-red-500 border border-red-500/50',
 };
 
 const STATUS_LABELS = {

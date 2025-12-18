@@ -51,13 +51,14 @@ export default function Login() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-gradient-to-br from-gray-950 via-gray-900 to-black overflow-hidden relative">
       {/* Botón Flotante para Salir */}
-      <div className="absolute top-6 left-6 z-50">
+      {/* Botón Flotante para Salir */}
+      <div className="absolute top-4 left-4 z-50 lg:top-8 lg:left-8">
         <Link href="/">
           <Button
-            variant="outline"
-            className="bg-black/40 backdrop-blur-md border-white/10 text-white hover:bg-primary hover:text-white hover:border-primary transition-all duration-300"
+            variant="ghost"
+            className="text-white hover:bg-white/10 hover:text-white group"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
             Volver a la Tienda
           </Button>
         </Link>
@@ -114,7 +115,7 @@ export default function Login() {
         {/* Decoración de fondo móvil */}
         <div className="absolute inset-0 lg:hidden z-0">
           <Image
-            src="https://images.unsplash.com/photo-1544025162-d7669d26560e?q=80&w=1000&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=1000&auto=format&fit=crop"
             alt="Background Mobile"
             fill
             className="object-cover opacity-10"

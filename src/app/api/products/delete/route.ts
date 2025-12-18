@@ -30,9 +30,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    console.error('Error in /api/products/delete:', e);
+    if (e.name === 'ZodError') {
+      return NextResponse.json({ error: 'ID de producto requerido' }, { status: 400 });
+    }
     return NextResponse.json(
-      { error: e.message || 'Something went wrong' },
+      { error: 'Error al eliminar el producto' },
       { status: 500 }
     );
   }
