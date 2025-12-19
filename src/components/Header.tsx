@@ -4,6 +4,9 @@ import { ShoppingBag, Search, ChefHat, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import FuzzySearchBar from './FuzzySearchBar';
+import { Product } from '@/types/products';
+import { useEffect, useState } from 'react';
 
 interface HeaderProps {
   searchTerm: string;
@@ -27,6 +30,23 @@ export default function Header({
   cartCount,
   onCartClick,
 }: HeaderProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products/list');
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data);
+        }
+      } catch (err) {
+        // Silencioso, el search bar manejará el estado vacío
+      }
+    }
+    fetchProducts();
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-md dark:bg-zinc-950/80 dark:border-zinc-800 transition-colors">
       <div className="max-w-7xl mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -43,17 +63,10 @@ export default function Header({
           </div>
         </div>
 
-        <div className="hidden md:flex flex-1 max-w-md mx-8 relative group">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors"
-            size={20}
-          />
-          <Input
-            type="search"
-            placeholder="Buscar cortes, origen o categoría..."
-            value={searchTerm}
-            onChange={(e) => onSearchTermChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-transparent border-2 rounded-xl focus:bg-white focus:border-primary focus:outline-none transition-all font-medium text-sm dark:bg-zinc-900/50 dark:border-zinc-800 dark:text-white"
+        <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
+          <FuzzySearchBar
+            products={products}
+            onSearch={onSearchTermChange}
           />
         </div>
 

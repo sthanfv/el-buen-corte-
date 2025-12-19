@@ -1,81 +1,84 @@
+import * as Sentry from '@sentry/nextjs';
 import { adminDb } from './firebase';
 
-type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'AUDIT';
+/**
+ * Professional Logger Utility with Sentry and Firestore Integration
+ * Protocolo: MANDATO-FILTRO.
+ */
 
-interface LogMetadata {
-    uid?: string;
-    ip?: string;
-    endpoint?: string;
-    resourceId?: string;
-    [key: string]: any;
-}
+type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'audit';
 
 class Logger {
-    private isDev = process.env.NODE_ENV === 'development';
+    private isProduction = process.env.NODE_ENV === 'production';
 
-    /**
-     * Standard logging to console/runtime logs
-     */
-    private logToConsole(level: LogLevel, message: string, meta?: LogMetadata) {
-        if (level === 'DEBUG' && !this.isDev) return;
-
-        const timestamp = new Date().toISOString();
-        const logEntry = {
-            timestamp,
-            level,
-            message,
-            ...meta
-        };
-
-        if (level === 'ERROR' || level === 'AUDIT') {
-            console.error(JSON.stringify(logEntry));
-        } else if (level === 'WARN') {
-            console.warn(JSON.stringify(logEntry));
-        } else {
-            console.log(JSON.stringify(logEntry));
-        }
-    }
-
-    /**
-     * Persist critical security events to Firestore for permanent audit trail
-     */
-    private async persistToAudit(message: string, meta: LogMetadata) {
-        try {
-            await adminDb.collection('security_audits').add({
-                timestamp: new Date().toISOString(),
-                type: 'AUDIT',
-                message,
-                ...meta
+    constructor() {
+        if (this.isProduction && process.env.SENTRY_DSN) {
+            Sentry.init({
+                dsn: process.env.SENTRY_DSN,
+                tracesSampleRate: 1.0,
             });
-        } catch (error) {
-            // Fallback to console if Firestore fails
-            console.error('[CRITICAL] Failed to persist audit log to Firestore:', error);
         }
     }
 
-    info(message: string, meta?: LogMetadata) {
-        this.logToConsole('INFO', message, meta);
+    private formatMessage(level: LogLevel, message: string, data?: any) {
+        const timestamp = new Date().toISOString();
+        return `[${timestamp}] [${level.toUpperCase()}]: ${message} ${data ? JSON.stringify(data) : ''}`;
     }
 
-    warn(message: string, meta?: LogMetadata) {
-        this.logToConsole('WARN', message, meta);
+    private async persistLog(level: LogLevel, message: string, data?: any) {
+        try {
+            // Guardar solo logs críticos o de auditoría en Firestore para evitar saturación
+            if (level === 'error' || level === 'audit' || level === 'warn') {
+                await adminDb.collection('system_logs').add({
+                    level,
+                    message,
+                    data: data ? JSON.parse(JSON.stringify(data)) : null,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        } catch (e) {
+            console.error('Failed to persist log to Firestore', e);
+        }
     }
 
-    error(message: string, meta?: LogMetadata) {
-        this.logToConsole('ERROR', message, meta);
+    info(message: string, data?: any) {
+        if (!this.isProduction) {
+            console.info(this.formatMessage('info', message, data));
+        }
     }
 
-    /**
-     * AUDIT level is for critical security events that MUST be traceable.
-     * Persists to both Console and Firestore.
-     */
-    async audit(message: string, meta: LogMetadata) {
-        this.logToConsole('AUDIT', message, meta);
-        await this.persistToAudit(message, meta);
+    warn(message: string, data?: any) {
+        console.warn(this.formatMessage('warn', message, data));
+        this.persistLog('warn', message, data);
+        if (this.isProduction) {
+            Sentry.captureMessage(message, { level: 'warning', extra: data });
+        }
     }
 
-    debug(message: string, meta?: LogMetadata) {
-        this.logToConsole('DEBUG', message, meta);
+    error(message: string, data?: any) {
+        console.error(this.formatMessage('error', message, data));
+        this.persistLog('error', message, data);
+        if (this.isProduction) {
+            if (data instanceof Error) {
+                Sentry.captureException(data);
+            } else {
+                Sentry.captureException(new Error(message), { extra: data });
+            }
+        }
+    }
+
+    audit(message: string, data?: any) {
+        console.log(this.formatMessage('audit', message, data));
+        this.persistLog('audit', message, data);
+        if (this.isProduction) {
+            Sentry.captureMessage(`AUDIT: ${message}`, { level: 'info', extra: data });
+        }
+    }
+
+    debug(message: string, data?: any) {
+        if (!this.isProduction) {
+            console.debug(this.formatMessage('debug', message, data));
+        }
     }
 }
 

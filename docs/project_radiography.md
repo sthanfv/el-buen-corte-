@@ -9,13 +9,13 @@ Este documento técnico sirve como "Estado del Arte" del proyecto para presentac
 ## 1. Resumen Ejecutivo
 "El Buen Corte" no es solo una página web, es una **Plataforma de E-commerce Serverless** diseñada para escalar sin costos fijos de infraestructura. Combina una interfaz de usuario premium (shadcn/ui) con un backend robusto (Next.js + Firebase Admin) para gestionar productos, pedidos e inventario en tiempo real.
 
-### Estado Actual (MVP Robusto)
-- **Frontend**: 100% Funcional. Completamente responsivo (Móvil/Desktop).
-- **Backend**: API Routes seguras implementadas.
-- **Base de Datos**: Firestore conectado en vivo.
-- **Seguridad**: Zod Schema Validation + Firebase Auth (Zero Trust).
-- **Testing**: Jest Test Suite configurada (Infrastructure Ready).
-- **CI/CD**: GitHub Actions pipeline activo.
+### Estado Actual (Release Candidate)
+- **Dashboard Administrativo**: Panel premium con analítica de retención, LTV y System Logs.
+- **Backend Robusto**: Transacciones ACID, desacoplamiento por eventos y auditoría persistente.
+- **DevOps**: CI/CD configurado con GitHub Actions y Husky.
+- **Base de Datos**: Firestore con Triggers y Reglas de Seguridad estrictas.
+- **Seguridad**: Autenticación Centralizada (Firebase Admin) + Prevención XSS.
+- **Moderación**: Panel de Experiencias operativo con moderación en tiempo real.
 
 ---
 
@@ -71,11 +71,12 @@ graph TD
     *   Datos + URL Imagen -> API `/api/products/create` -> Firestore Collection `products`.
 
 ### B. Compra de Cliente (User)
-1.  **Exploración**: Catálogo público (`/`) obtiene datos de `/api/products/list`.
-2.  **Carrito**: Estado local persistente.
+1.  **Exploración**: Catálogo público optimizado (Carga infinita/Lazy loading).
+2.  **Carrito**: Estado global (Context API) con sincronización de pesos y precios.
 3.  **Checkout**:
-    *   Cliente confirma -> API `/api/orders/create` (Trazabilidad).
-    *   Redirección a WhatsApp con mensaje pre-formateado.
+    *   **Idempotencia**: Prevención de pedidos duplicados.
+    *   **Segregación**: Redirección a seguimiento público (Read-only status).
+    *   **Conversión**: Integración con WhatsApp Business.
 
 ---
 

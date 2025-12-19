@@ -222,7 +222,7 @@ export function SalesBotV2() {
                         </div>
                         <div className="flex-1 space-y-2">
                             <div className="flex justify-between items-start">
-                                <h5 className="font-semibold text-sm text-primary">Asistente Virtual</h5>
+                                <h5 className="font-semibold text-sm text-primary">Asistente de Cortes Premium</h5>
                                 <button
                                     onClick={dismiss}
                                     className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"

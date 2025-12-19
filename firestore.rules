@@ -41,18 +41,6 @@ service cloud.firestore {
       allow read, write: if isAuth() && request.auth.uid == userId;
     }
 
-    // Productos: Catálogo público, gestión protegida
-    match /products/{productId} {
-      allow read: if true; 
-      allow write: if isAdmin();
-    }
-
-    // Pedidos: Creación pública (Clientes), Gestión protegida (Admin)
-    match /orders/{orderId} {
-      // ✅ SECURITY: Solo permitir creación si proviene de la API y pasa validación
-      allow create: if request.resource.data._source == "api" && isValidOrder();
-      
-      // Solo admin puede leer/editar todos los pedidos
       allow read, update, delete: if isAdmin();
     }
     

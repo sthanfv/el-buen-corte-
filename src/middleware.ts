@@ -1,10 +1,50 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
-export function middleware(request: NextRequest) {
+// 🛡️ PRODUCTION-GRADE SECURITY: Distributed Rate Limiting with Upstash Redis
+// The keys are provided in the .env file.
+const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+const ratelimit = new Ratelimit({
+    redis: redis,
+    limiter: Ratelimit.slidingWindow(100, '60 s'),
+    analytics: true,
+});
+
+export async function middleware(request: NextRequest) {
+    // Robust IP detection for Next.js middleware
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+        request.headers.get('x-real-ip') ||
+        '127.0.0.1';
+
+    // ✅ BLACKLIST CHECK (DEFENSA PROACTIVA - MANDATO-FILTRO)
+    const isBlacklisted = await redis.get(`blacklist_${ip}`);
+    if (isBlacklisted) {
+        return NextResponse.redirect('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    }
+
+    // Rate Limiting Check
+    const { success, limit, remaining, reset } = await ratelimit.limit(`ratelimit_${ip}`);
+
+    if (!success) {
+        return new NextResponse('Too Many Requests', {
+            status: 429,
+            headers: {
+                'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
+                'X-RateLimit-Limit': limit.toString(),
+                'X-RateLimit-Remaining': remaining.toString(),
+            }
+        });
+    }
+
     const response = NextResponse.next();
 
-    // 🛡️ SECURITY HEADERS (OWASP RECOMMENDATIONS)
+    // 🛡️ CONSOLIDATED SECURITY HEADERS (OWASP RECOMMENDATIONS)
     const headers = response.headers;
 
     // HSTS: Forzar HTTPS siempre (1 año)
@@ -23,8 +63,6 @@ export function middleware(request: NextRequest) {
     headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()');
 
     // CSP: Content Security Policy (Endurecida)
-    // Se elimina 'unsafe-eval' para cumplir con estándares modernos de seguridad.
-    // 'unsafe-inline' se mantiene temporalmente para compatibilidad con estilos dinámicos de Shadcn/UI y Next.js.
     headers.set(
         'Content-Security-Policy',
         "default-src 'self'; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://apis.google.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseio.com https://*.vercel-storage.com;"
@@ -35,7 +73,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        // Aplicar a todas las rutas excepto estáticas y API (la API tiene su propio manejo si se desea)
         '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 };

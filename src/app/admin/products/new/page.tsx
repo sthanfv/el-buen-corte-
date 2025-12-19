@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
 import Link from 'next/link';
-import { auth } from '@/firebase/client'; // Corrected import
+import { auth } from '@/firebase/client';
 
 const productSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
@@ -37,6 +37,11 @@ const productSchema = z.object({
   pairing: z.string().optional(),
   badge: z.string().optional(),
   corte: z.string().optional(),
+  // ✅ MITIGACIÓN OPERATIVA
+  weightLabel: z.string().optional(),
+  minWeight: z.coerce.number().optional(),
+  isFixedPrice: z.boolean().default(false),
+  basePrice: z.coerce.number().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -57,17 +62,19 @@ export default function NewProductPage() {
       pairing: '',
       badge: '',
       corte: '',
+      weightLabel: '',
+      minWeight: 0,
+      isFixedPrice: false,
+      basePrice: 0,
     },
   });
 
   const onSubmit = async (data: ProductFormValues) => {
     setIsLoading(true);
     try {
-      // 1. Get Token FIRST
       const idToken = await auth.currentUser?.getIdToken();
       if (!idToken) throw new Error('No estás autenticado.');
 
-      // 2. Upload image with Auth Header
       const file = data.image[0] as File;
       const formData = new FormData();
       formData.append('file', file);
@@ -87,7 +94,6 @@ export default function NewProductPage() {
       }
       const { url } = await uploadRes.json();
 
-      // 2. Prepare product data for API
       const productData = {
         name: data.name,
         category: data.category,
@@ -110,9 +116,12 @@ export default function NewProductPage() {
         },
         pairing: data.pairing || '',
         badge: data.badge || '',
+        weightLabel: data.weightLabel || '',
+        minWeight: data.minWeight || 0,
+        isFixedPrice: data.isFixedPrice || false,
+        basePrice: data.basePrice || 0,
       };
 
-      // 3. Call create product API endpoint
       const createRes = await fetch('/api/products/create', {
         method: 'POST',
         headers: {
@@ -307,6 +316,7 @@ export default function NewProductPage() {
                 )}
               />
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <FormField
                 control={form.control}
@@ -330,6 +340,79 @@ export default function NewProductPage() {
                     <FormControl>
                       <Input placeholder="Ej: Premium" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <h2 className="text-xl font-bold border-b pb-2 mt-10 text-primary">
+              ⚖️ Control de Peso Variable (Mitigación)
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-muted/30 p-4 rounded-lg">
+              <FormField
+                control={form.control}
+                name="weightLabel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rango de Peso (Etiqueta)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: Aprox. 900g - 1.1kg" {...field} />
+                    </FormControl>
+                    <FormDescription>Lo que el cliente verá en la web.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="minWeight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Peso Mínimo Garantizado (Kg)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="Ej: 0.9" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-4 border rounded-lg bg-primary/5">
+              <FormField
+                control={form.control}
+                name="isFixedPrice"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Input
+                        type="checkbox"
+                        className="w-4 h-4 mt-1"
+                        checked={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Vender por Pieza Fija</FormLabel>
+                      <FormDescription>
+                        Si se activa, se ignora el gramaje exacto para el cobro.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="basePrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Precio por Pieza (Estandarizado)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Ej: 50000" {...field} disabled={!form.watch('isFixedPrice')} />
+                    </FormControl>
+                    <FormDescription>Precio final que paga el cliente.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

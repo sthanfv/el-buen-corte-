@@ -40,9 +40,9 @@ La seguridad se maneja bajo el principio de **Zero Trust**.
 
 ### Autenticación Administrativa (`AdminGuard`)
 Todas las rutas bajo `/admin/*` están protegidas por el componente `src/components/AdminGuard.tsx`.
--   **Verificación**: Revisa que exista un usuario autenticado y que su identidad esté autorizada mediante Custom Claims (`admin: true`) o coincidencia en la lista blanca de dominios permitidos.
--   **MFA (Multifactor Auth)**: El sistema soporta y requiere la activación de MFA para todos los accesos administrativos como medida de protección estándar.
--   **Términos y Privacidad**: Páginas legales activas y banner de consentimiento para el uso de cookies técnicas y de sesión.
+-   **Verificación Centralizada**: Utiliza `src/lib/auth-server.ts` para validar Custom Claims (`admin: true`) en cada petición al servidor.
+-   **Seguridad Raíz**: Solo el administrador principal puede otorgar nuevos permisos administrativos.
+-   **Sanitización**: Todas las entradas de clientes pasan por un motor de limpieza XSS ligero antes de su persistencia.
 
 ### Reglas de Acceso a Datos (`firestore.rules`)
 Las reglas definen quién puede leer/escribir:
@@ -72,11 +72,16 @@ Para cambiar el teléfono, dirección o redes sociales sin tocar código:
 2.  Use el botón "Crear Producto" para añadir cortes.
 3.  **Ficha Técnica**: Cada producto cuenta con campos para Origen, Maduración, Grasa y Maridaje, editables individualmente.
 
-### Gestión de Pedidos (Avanzado)
-Ubicado en `/admin/orders`. Permite una operación logística completa:
-1.  **Estados**: Cambie el estado de Pendiente a Confirmado, Preparando o Entregado con persistencia inmediata.
-2.  **Búsqueda**: Filtre transacciones por nombre de cliente, fecha, monto o ID de ticket.
-3.  **Detalles**: Acceda al desglose de productos comprados y datos de contacto de envío en un modal dedicado.
+### Gestión de Pedidos y Trazabilidad
+Ubicado en `/admin/orders`.
+1.  **Estados**: Cambie el estado con persistencia inmediata y registro del responsable.
+2.  **Seguimiento Público**: Los clientes pueden consultar su estado mediante una URL segura de sólo lectura, sin exponer datos privados.
+
+### Moderación de Experiencias
+Ubicado en `/admin/experiences`.
+1.  **Comentarios**: Sistema de aprobación previa para evitar SPAM o contenido ofensivo.
+2.  **Solicitudes**: Gestión de peticiones de experiencias personalizadas.
+3.  **Blacklist**: Capacidad de banear IPs por comportamiento abusivo en tiempo real.
 
 ---
 

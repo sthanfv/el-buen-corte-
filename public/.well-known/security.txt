@@ -1,0 +1,8 @@
+Contact: mailto:admin@elbuencorte.co
+Expires: 2026-01-01T00:00:00.000Z
+Preferred-Languages: es, en
+Policy: https://elbuencorte.co/privacy
+Hiring: https://elbuencorte.co/careers
+
+# MANDATO-FILTRO: Seguridad Proactiva
+# Si eres un investigador de seguridad, por favor reporta hallazgos a la dirección arriba.

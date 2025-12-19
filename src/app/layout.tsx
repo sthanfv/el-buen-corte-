@@ -1,12 +1,7 @@
 import './globals.css';
-import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/Providers';
-
-const fontSans = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-});
+import { CommandMenu } from '@/components/CommandMenu';
 
 export const metadata = {
   title: 'El Buen Corte | Carnes Premium a Domicilio',
@@ -27,10 +22,11 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={cn('font-sans antialiased bg-background', fontSans.variable)}
+        className={cn('min-h-screen bg-background font-sans antialiased')}
       >
         <Providers>
           {children}
+          <CommandMenu />
         </Providers>
       </body>
     </html >

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { MessageSquareQuote, Loader2, CheckCircle2 } from 'lucide-react';
-import { CustomerInfoSchema, type CustomerInfo, type OrderItem } from '@/schemas/order';
+import { CustomerInfoSchema, type CustomerInfo } from '@/schemas/order';
+import type { OrderItem } from '@/types/products';
 import { formatPrice } from '@/data/products';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +17,8 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Form,
     FormControl,
@@ -34,13 +37,14 @@ import { signInAnonymously } from 'firebase/auth';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    order: any[]; // OrderItem from CartSidebar
+    order: OrderItem[];
     total: number;
     onSuccess: () => void;
 }
 
 export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Props) {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [habeasDataAccepted, setHabeasDataAccepted] = useState(false);
     const { toast } = useToast();
     const [orderId, setOrderId] = useState<string | null>(null);
     const [idempotencyKey] = useState(() => crypto.randomUUID());
@@ -82,6 +86,8 @@ export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Pro
                     pricePerKg: item.pricePerKg,
                     category: item.category,
                     imageUrl: item.images?.[0]?.src,
+                    weightLabel: item.weightLabel,
+                    isFixedPrice: item.isFixedPrice,
                 })),
                 total,
                 paymentMethod: 'efectivo' as const,
@@ -108,7 +114,8 @@ export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Pro
             // Show success message
             toast({
                 title: '¡Pedido recibido!',
-                description: `ID: ${result.id.slice(0, 8).toUpperCase()}`,
+                message: `ID: ${result.id.slice(0, 8).toUpperCase()}`,
+                type: 'success',
             });
 
             // ✅ Open WhatsApp if URL available
@@ -118,11 +125,11 @@ export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Pro
 
             onSuccess();
         } catch (error) {
-            console.error('Order error:', error);
+            console.error('Error en pedido:', error);
             toast({
                 title: 'Error',
-                description: (error as Error).message || 'No se pudo procesar tu pedido.',
-                variant: 'destructive',
+                message: (error as Error).message || 'No se pudo procesar tu pedido.',
+                type: 'error',
             });
         } finally {
             setIsSubmitting(false);
@@ -330,6 +337,40 @@ export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Pro
                             </p>
                         </div>
 
+                        {/* ✅ HONEYPOT (DEFENSA PROACTIVA - MANDATO-FILTRO) */}
+                        {/* Este campo es invisible para humanos pero detectable por bots */}
+                        <div className="opacity-0 absolute -z-10 top-0 left-0 h-0 w-0 overflow-hidden">
+                            <label htmlFor="business_fax">Si eres humano, deja esto vacío (Fax de Negocio)</label>
+                            <Input
+                                id="business_fax"
+                                name="business_fax"
+                                tabIndex={-1}
+                                autoComplete="off"
+                                placeholder="F-123456"
+                            />
+                        </div>
+
+                        {/* Ley 1581 - Habeas Data */}
+                        <div className="flex items-start space-x-3 p-4 bg-primary/5 rounded-xl border border-primary/10">
+                            <Checkbox
+                                id="habeas-data"
+                                checked={habeasDataAccepted}
+                                onCheckedChange={(checked) => setHabeasDataAccepted(checked as boolean)}
+                                className="mt-1"
+                            />
+                            <div className="grid gap-1.5 leading-none">
+                                <label
+                                    htmlFor="habeas-data"
+                                    className="text-[10px] font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 uppercase tracking-tighter"
+                                >
+                                    Autorizo el tratamiento de mis datos personales
+                                </label>
+                                <p className="text-[9px] text-muted-foreground">
+                                    De acuerdo con la <span className="font-bold underline">Ley 1581 de 2012 (Habeas Data)</span>, autorizo de manera libre y expresa el uso de mi información para la gestión de mi pedido en El Buen Corte.
+                                </p>
+                            </div>
+                        </div>
+
                         {/* Submit Button */}
                         <DialogFooter className="gap-2 sm:gap-0">
                             <Button
@@ -342,25 +383,22 @@ export function OrderFormModal({ isOpen, onClose, order, total, onSuccess }: Pro
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={isSubmitting}
-                                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                                disabled={isSubmitting || !habeasDataAccepted}
+                                className="w-full bg-primary hover:bg-primary/90 text-white font-black italic uppercase tracking-widest py-6 rounded-xl shadow-xl shadow-primary/20 transition-all duration-300 disabled:opacity-50 disabled:grayscale"
                             >
                                 {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Procesando...
-                                    </>
+                                    <div className="flex items-center gap-2">
+                                        <span className="animate-spin text-xl">⏳</span>
+                                        Procesando Pedido...
+                                    </div>
                                 ) : (
-                                    <>
-                                        <MessageSquareQuote className="mr-2 h-4 w-4" />
-                                        Enviar por WhatsApp
-                                    </>
+                                    'Finalizar Compra Premium'
                                 )}
                             </Button>
                         </DialogFooter>
                     </form>
                 </Form>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

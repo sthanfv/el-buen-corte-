@@ -17,6 +17,7 @@ import {
   Check,
   Wine,
   Activity,
+  ShieldAlert,
 } from 'lucide-react';
 import type { Product } from '@/types/products';
 import { APP_CONFIG, COOKING_TEMPS } from '@/data/products';
@@ -42,6 +43,8 @@ import {
 } from '@/components/ui/sheet';
 import AnimatedPrice from './AnimatedPrice';
 import { useToast } from '@/hooks/use-toast';
+import { useInterestScoring } from '@/hooks/use-interest-scoring';
+import { Sparkles, ShoppingCart } from 'lucide-react';
 
 interface Props {
   product: Product;
@@ -65,6 +68,11 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
   );
   const { toast } = useToast();
   const [showShareTooltip, setShowShareTooltip] = useState(false);
+  const [ugcImages, setUgcImages] = useState<{ src: string; alt: string; aiHint?: string }[]>([]);
+
+  // ✅ SCORING ALGORÍTMICO (MANDATO-FILTRO)
+  const productCategory = (product.category as any) || 'Res';
+  const { vector, dominantType, trackAction } = useInterestScoring();
 
   useEffect(() => {
     if (!carouselApi) return;
@@ -80,7 +88,30 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
     };
   }, [carouselApi]);
 
-  const totalPrice = weight * product.pricePerKg;
+  useEffect(() => {
+    async function fetchUGC() {
+      try {
+        const res = await fetch('/api/experiences/comment');
+        if (res.ok) {
+          const comments = await res.json();
+          const productUGC = comments
+            .filter((c: any) => c.productId === product.id && c.imageUrl)
+            .map((c: any) => ({
+              src: c.imageUrl,
+              alt: `Asado real de ${c.authorName}`,
+              aiHint: 'UGC Content'
+            }));
+          setUgcImages(productUGC);
+        }
+      } catch (e) {
+        console.error('Error fetching UGC', e);
+      }
+    }
+    fetchUGC();
+  }, [product.id]);
+
+  const allImages = [...product.images, ...ugcImages];
+  const totalPrice = product.isFixedPrice ? (product.basePrice || 0) : (weight * product.pricePerKg);
   const estimatedServings = Math.max(
     1,
     Math.floor(weight / APP_CONFIG.boneInFactor)
@@ -104,6 +135,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
         selectedWeight: weight,
         finalPrice: totalPrice,
       });
+      trackAction(productCategory, 'ADD_TO_CART'); // ✅ Track
       setCartState('success');
       setTimeout(() => setCartState('idle'), 2000);
     }, 800);
@@ -150,7 +182,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
         <div className="relative p-0">
           <Carousel setApi={setCarouselApi} className="w-full">
             <CarouselContent>
-              {product.images.map((img, index) => (
+              {allImages.map((img, index) => (
                 <CarouselItem key={index}>
                   <SheetTrigger asChild>
                     <div className="aspect-[4/3.5] cursor-pointer relative overflow-hidden">
@@ -160,7 +192,13 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                         fill
                         className="object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-out"
                         data-ai-hint={img.aiHint}
+                        onClick={() => trackAction(productCategory, 'CLICK_PHOTO')} // ✅ Track
                       />
+                      {img.aiHint === 'UGC Content' && (
+                        <Badge className="absolute bottom-4 right-4 bg-primary/80 backdrop-blur font-black italic uppercase text-[8px] tracking-widest border-white/20">
+                          Foto de Cliente
+                        </Badge>
+                      )}
                     </div>
                   </SheetTrigger>
                 </CarouselItem>
@@ -180,12 +218,17 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
             >
               <Flame size={12} /> {product.badge}
             </Badge>
-            {product.stock < 10 && (
-              <Badge
-                variant="destructive"
-                className="bg-destructive/90 backdrop-blur-sm text-destructive-foreground shadow-lg animate-pulse border-destructive-foreground/50"
-              >
+            {product.stock <= 0 ? (
+              <Badge variant="destructive" className="bg-red-600 animate-pulse text-white shadow-lg uppercase tracking-wide">
+                <ShieldAlert size={12} /> Agotado
+              </Badge>
+            ) : product.stock < 5 ? (
+              <Badge variant="destructive" className="bg-orange-500/90 backdrop-blur-sm text-white shadow-lg border-orange-400">
                 ¡Solo {product.stock} disponibles!
+              </Badge>
+            ) : (
+              <Badge className="bg-green-600/80 backdrop-blur-sm text-white shadow-lg border-green-400/50">
+                Stock: {product.stock} unidades
               </Badge>
             )}
           </div>
@@ -228,7 +271,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
           </div>
 
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-            {product.images.map((_, idx) => (
+            {allImages.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => carouselApi?.scrollTo(idx)}
@@ -240,6 +283,24 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
             ))}
           </div>
           <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-background via-background/80 to-transparent z-0 pointer-events-none"></div>
+
+          {/* ✅ SALESBOT REACTIVO ALGORÍTMICO (MANDATO-FILTRO) */}
+          {dominantType === productCategory && (
+            <div className="absolute bottom-16 left-0 w-full px-6 z-30 animate-in slide-in-from-bottom-4 fade-in duration-700">
+              <div className="bg-primary/95 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0 animate-bounce">
+                  <Sparkles className="text-primary w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">Oferta Personalizada</p>
+                  <p className="text-xs font-bold text-white leading-tight">Vemos que te encanta la {productCategory}. ¡Lleva hoy un 10% OFF extra en este corte!</p>
+                </div>
+                <Button variant="outline" size="sm" className="bg-white/20 border-white/40 text-white hover:bg-white hover:text-primary font-black uppercase text-[10px]">
+                  APLICAR
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <CardContent className="relative px-6 pb-6 pt-4 bg-background -mt-16 z-10 flex-1 flex flex-col rounded-t-[1.5rem]">
@@ -290,7 +351,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
               </span>
               <div className="text-right flex flex-col items-end">
                 <span className="text-3xl font-black text-foreground leading-none tracking-tighter">
-                  {weight.toFixed(1)}
+                  {product.weightLabel ? product.weightLabel : weight.toFixed(1) + ' Kg'}
                 </span>
                 <span className="text-[10px] font-bold text-green-600 bg-green-100 px-1.5 rounded mt-1 flex items-center gap-1">
                   <Users size={10} /> Ideal para {estimatedServings}{' '}
@@ -299,43 +360,51 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-10 h-10 rounded-xl bg-background shadow-sm active:scale-95 disabled:opacity-30"
-                onClick={() => updateWeight(weight - 0.5)}
-                disabled={weight <= 0.5}
-              >
-                <Minus size={18} />
-              </Button>
-              <div
-                className="flex-1 h-3 bg-muted rounded-full cursor-pointer relative group/bar"
-                onClick={handleBarClick}
-              >
-                <div className="absolute inset-0 bg-muted-foreground/20 group-hover/bar:bg-muted-foreground/30 transition-colors rounded-full"></div>
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-red-600 rounded-full transition-all duration-300 relative"
-                  style={{
-                    width: `${((weight - APP_CONFIG.minWeightPerItem) /
-                      (APP_CONFIG.maxWeightPerItem -
-                        APP_CONFIG.minWeightPerItem)) *
-                      100
-                      }%`,
-                  }}
+            {!product.isFixedPrice ? (
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-10 h-10 rounded-xl bg-background shadow-sm active:scale-95 disabled:opacity-30"
+                  onClick={() => updateWeight(weight - 0.5)}
+                  disabled={weight <= 0.5}
                 >
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-white/30 rounded-full mr-1"></div>
+                  <Minus size={18} />
+                </Button>
+                <div
+                  className="flex-1 h-3 bg-muted rounded-full cursor-pointer relative group/bar"
+                  onClick={handleBarClick}
+                >
+                  <div className="absolute inset-0 bg-muted-foreground/20 group-hover/bar:bg-muted-foreground/30 transition-colors rounded-full"></div>
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-red-600 rounded-full transition-all duration-300 relative"
+                    style={{
+                      width: `${((weight - APP_CONFIG.minWeightPerItem) /
+                        (APP_CONFIG.maxWeightPerItem -
+                          APP_CONFIG.minWeightPerItem)) *
+                        100
+                        }%`,
+                    }}
+                  >
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-white/30 rounded-full mr-1"></div>
+                  </div>
                 </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="w-10 h-10 rounded-xl bg-background shadow-sm active:scale-95"
+                  onClick={() => updateWeight(weight + 0.5)}
+                >
+                  <Plus size={18} />
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-10 h-10 rounded-xl bg-background shadow-sm active:scale-95"
-                onClick={() => updateWeight(weight + 0.5)}
-              >
-                <Plus size={18} />
-              </Button>
-            </div>
+            ) : (
+              <div className="bg-primary/5 p-3 rounded-xl border border-primary/20">
+                <p className="text-[10px] font-bold text-primary uppercase leading-tight">
+                  📌 Venta por pieza estandarizada. El peso puede variar dentro del rango indicado.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-5">
@@ -349,15 +418,19 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
             </div>
             <Button
               onClick={handleAddToCartInternal}
-              disabled={cartState !== 'idle'}
+              disabled={cartState !== 'idle' || product.stock <= 0}
               className={cn(
                 'flex-1 h-14 rounded-2xl font-bold text-sm uppercase tracking-wider shadow-xl transform hover:-translate-y-1 transition-all duration-300 group/cart',
-                cartState === 'success'
-                  ? 'bg-green-600 text-white shadow-green-900/20'
-                  : 'bg-foreground text-background hover:bg-foreground/90 shadow-gray-900/20'
+                product.stock <= 0
+                  ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                  : cartState === 'success'
+                    ? 'bg-green-600 text-white shadow-green-900/20'
+                    : 'bg-foreground text-background hover:bg-foreground/90 shadow-gray-900/20'
               )}
             >
-              {cartState === 'idle' && (
+              {product.stock <= 0 ? (
+                <>Sin Inventario</>
+              ) : cartState === 'idle' && (
                 <>
                   <ShoppingBag
                     size={18}
@@ -395,7 +468,10 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
               </Button>
             </SheetClose>
           </SheetHeader>
-          <div className="p-6 pt-4 space-y-6">
+          <div
+            className="p-6 pt-4 space-y-6"
+            onScroll={() => trackAction(productCategory, 'SCROLL_DESCRIPTION')} // ✅ Track
+          >
             <div className="grid grid-cols-2 gap-3">
               {Object.entries(product.details).map(([key, value]) => (
                 <div key={key} className="bg-secondary p-3 rounded-2xl border">
@@ -407,6 +483,16 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                   </span>
                 </div>
               ))}
+            </div>
+
+            <div className="bg-secondary p-4 rounded-2xl border border-dashed border-muted-foreground/30">
+              <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                <ShieldAlert size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Compromiso de Honestidad</span>
+              </div>
+              <p className="text-[11px] font-medium leading-relaxed italic text-muted-foreground">
+                Cortesía de la casa: "El Cliente Nunca Pierde". Al ser un producto artesanal, el peso final puede variar levemente (+/- 5%). Garantizamos siempre el peso mínimo indicado o superior.
+              </p>
             </div>
 
             <div className="bg-purple-50 p-4 rounded-2xl border border-purple-100 flex gap-4 items-center">

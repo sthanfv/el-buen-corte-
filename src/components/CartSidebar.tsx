@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { ShoppingBag, Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
 import { formatPrice } from '@/data/products';
-import type { Product } from '@/types/products';
+import type { Product, OrderItem } from '@/types/products';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -16,57 +16,42 @@ import {
 import { Separator } from './ui/separator';
 import { OrderFormModal } from './OrderFormModal';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/components/cart-provider';
 
-export interface OrderItem extends Omit<Product, 'images'> {
-  images: { src: string; alt: string; aiHint: string }[];
-  orderId: string;
-  selectedWeight: number;
-  finalPrice: number;
-}
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  order: OrderItem[];
-  onRemove: (id: string) => void;
-  setOrder: React.Dispatch<React.SetStateAction<OrderItem[]>>;
 }
 
 export default function CartSidebar({
   isOpen,
   onClose,
-  order,
-  onRemove,
-  setOrder,
 }: Props) {
   const [showOrderForm, setShowOrderForm] = useState(false);
   const { toast } = useToast();
+  const { order, removeFromCart, updateCartItem, clearCart } = useCart();
 
   const total = order.reduce((acc, item) => acc + item.finalPrice, 0);
 
   // ✅ Update weight and recalculate price
   const updateWeight = (orderId: string, delta: number) => {
-    setOrder((prevOrder) =>
-      prevOrder.map((item) => {
-        if (item.orderId === orderId) {
-          const newWeight = Math.max(0.1, Math.min(50, item.selectedWeight + delta));
-          return {
-            ...item,
-            selectedWeight: newWeight,
-            finalPrice: newWeight * item.pricePerKg,
-          };
-        }
-        return item;
-      })
-    );
+    const item = order.find(i => i.orderId === orderId);
+    if (!item) return;
+
+    const newWeight = Math.max(0.1, Math.min(50, item.selectedWeight + delta));
+    updateCartItem(orderId, {
+      selectedWeight: newWeight,
+      finalPrice: newWeight * item.pricePerKg,
+    });
   };
 
   const handleContinue = () => {
     if (order.length === 0) {
       toast({
         title: 'Carrito vacío',
-        description: 'Agrega productos antes de continuar',
-        variant: 'destructive',
+        message: 'Agrega productos antes de continuar',
+        type: 'error',
       });
       return;
     }
@@ -181,7 +166,10 @@ export default function CartSidebar({
                           variant="ghost"
                           size="sm"
                           className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                          onClick={() => onRemove(item.orderId)}
+                          onClick={() => {
+                            const idx = order.findIndex(i => i.orderId === item.orderId);
+                            if (idx !== -1) removeFromCart(idx);
+                          }}
                         >
                           <Trash2 size={16} className="mr-1" />
                           Eliminar

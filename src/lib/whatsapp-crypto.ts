@@ -95,7 +95,7 @@ export function getSellerWhatsApp(): string {
 export function generateWhatsAppOrderURL(
     phoneNumber: string,
     customerName: string,
-    items: Array<{ name: string; weight: number; price: number }>,
+    items: Array<{ name: string; weight: number; price: number; weightLabel?: string; isFixedPrice?: boolean }>,
     total: number
 ): string {
     // Format message
@@ -105,7 +105,8 @@ export function generateWhatsAppOrderURL(
 
     items.forEach((item, index) => {
         message += `${index + 1}. ${item.name}\n`;
-        message += `   • Peso: ${item.weight}kg\n`;
+        const weightValue = item.isFixedPrice && item.weightLabel ? item.weightLabel : `${item.weight}kg`;
+        message += `   • Detalle: ${weightValue}\n`;
         message += `   • Precio: $${item.price.toLocaleString('es-CO')}\n\n`;
     });
 

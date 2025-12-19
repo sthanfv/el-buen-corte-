@@ -1,6 +1,15 @@
 import { z } from 'zod';
 
-export const OrderStatusEnum = z.enum(['pending', 'confirmed', 'preparing', 'delivered', 'cancelled']);
+export const OrderStatusEnum = z.enum([
+  'CREATED',                // Recién llegado
+  'PENDING_VERIFICATION',   // Esperando que admin valide pago
+  'CONFIRMED',              // Pago validado financieramente
+  'CUTTING',                // En carnicería (Corte en proceso)
+  'PACKING',                // En empaque (Sellado al vacío)
+  'ROUTING',                // En ruta (Domiciliario asignado)
+  'DELIVERED',              // Entregado con éxito
+  'CANCELLED'               // Cancelado por cliente o fraude
+]);
 export type OrderStatus = z.infer<typeof OrderStatusEnum>;
 
 // ✅ SECURITY: Strict validation for order items
@@ -12,6 +21,8 @@ export const OrderItemSchema = z.object({
   pricePerKg: z.number().positive(),
   category: z.string().optional(),
   imageUrl: z.string().optional(),
+  weightLabel: z.string().optional(),
+  isFixedPrice: z.boolean().optional().default(false),
 });
 
 export type OrderItem = z.infer<typeof OrderItemSchema>;
@@ -33,11 +44,13 @@ export const CustomerInfoSchema = z.object({
   customerAddress: z
     .string()
     .min(10, 'Dirección muy corta')
-    .max(200, 'Dirección demasiado larga'),
+    .max(200, 'Dirección demasiado larga')
+    .regex(/^[a-zA-Z0-9\s#.,\-\u00C0-\u017F]+$/, 'Dirección contiene caracteres no permitidos'),
 
-  neighborhood: z.string().max(100).optional(),
-  city: z.string().min(2).max(100),
-  notes: z.string().max(500).optional(),
+  customerEmail: z.string().email('Email inválido').optional(), // Para retención/LTV
+  neighborhood: z.string().max(100).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s0-9]+$/, 'Barrio inválido').optional(),
+  city: z.string().min(2).max(100).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'Ciudad inválida'),
+  notes: z.string().max(500).regex(/^[a-zA-Z0-9\s.,!¡?¿\u00C0-\u017F]*$/, 'Notas contienen caracteres no permitidos').optional(),
   deliveryDate: z.string().optional(),
   deliveryTime: z.string().optional(),
 });
@@ -50,8 +63,26 @@ export const OrderSchema = z.object({
   items: z.array(OrderItemSchema).min(1, 'Debe haber al menos 1 producto'),
   total: z.number().positive(),
   paymentMethod: z.enum(['efectivo', 'transferencia']),
-  status: OrderStatusEnum.default('pending'),
+  status: OrderStatusEnum.default('CREATED'),
   createdAt: z.string().optional(),
+
+  // ✅ CONCILIACIÓN FINANCIERA (MANDATO-FILTRO)
+  transactionId: z.string().min(5, 'Código de transacción requerido').optional(),
+  verifiedAt: z.string().optional(),
+  verifiedBy: z.string().optional(),
+
+  // ✅ AUDITORÍA DE FSM & OBSERVABILIDAD
+  history: z.array(z.object({
+    status: OrderStatusEnum,
+    timestamp: z.string(),
+    userId: z.string().optional(),
+    durationMs: z.number().optional(), // Para métricas de eficiencia
+  })).default([]),
+
+  // ✅ RETENCIÓN: Control de automatización
+  reminded: z.boolean().default(false),
+  estimatedCycleDays: z.number().optional(),
+
   // ⚠️ SECURITY: These fields MUST ONLY be set server-side
   ipAddress: z.string().optional(),
   userAgent: z.string().optional(),

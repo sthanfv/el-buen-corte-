@@ -14,9 +14,10 @@ Middleware de seguridad (`src/middleware.ts`) implementado para mitigación de r
 
 ## 2. 🧱 Blindaje de Backend y Base de Datos (Nivel 1)
 Se han implementado salvaguardas estructurales para garantizar la integridad de las transacciones:
-- ✅ **Firestore API-Only**: Reglas de seguridad (`firestore.rules`) actualizadas para rechazar escrituras fuera de la API (vía tag `_source: "api"`).
-- ✅ **Sellado de Payload**: El servidor ignora el campo `total` del cliente y recalcula el monto final internamente para prevenir fraude de precios.
-- ✅ **Resiliencia API**: Tiempo de respuesta garantizado mediante Timeouts explícitos (5s) para mitigar ataques de denegación de servicio (DoS).
+- ✅ **Firestore API-Only**: Reglas de seguridad actualizadas para rechazar escrituras fuera de la API.
+- ✅ **Sellado de Payload**: Recalculo de montos en servidor y validación de stocks.
+- ✅ **Sanitización Robusta**: Implementación de `sanitizer.ts` para prevención de XSS en todo el contenido generado por usuarios.
+- ✅ **Idempotencia de Pedidos**: Sistema de llaves de idempotencia para prevenir transacciones duplicadas por fallos de red.
 
 ## 3. 🛡️ Control de Abuso y Privacidad (Nivel 2)
 Endurecimiento de la lógica operativa y gestión de datos sensibles:
@@ -26,9 +27,10 @@ Endurecimiento de la lógica operativa y gestión de datos sensibles:
 - ✅ **Zero Secrets in Code**: Migración total a variables de entorno con auditoría vía `.env.example`.
 
 ## 4. 👥 Auditoría y Cumplimiento
-- ✅ **Gestión Segura de Archivos**: Almacenamiento aislado en Vercel Blob con validación estricta de MIME-type.
-- ✅ **Trazabilidad**: Registro persistente del autor de los cambios y la IP de origen en cada transacción.
-- ✅ **MFA obligatorio**: Requisito de autenticación de dos factores para toda la administración.
+- ✅ **Hardening de Administración**: Centralización de la verificación en `auth-server.ts` con validación obligatoria de `admin: true` en custom claims.
+- ✅ **Blindaje de Privilegios**: Restricción de escalada de privilegios a través de un ID de Administrador Raíz único.
+- ✅ **Trazabilidad Total**: Registro de IPs, User-Agents y responsables en cada actualización de pedidos.
+- ✅ **Moderación Blindada**: Acceso al panel de experiencias protegido por capas duales de seguridad (Client Side Guard + Server Side Verification).
 
 ---
 

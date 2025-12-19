@@ -89,36 +89,36 @@ export default function Footer() {
           <h4 className="font-bold text-lg mb-6 text-foreground">Navegación</h4>
           <ul className="space-y-3">
             <li>
-              <Link href="/catalog" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary scale-0 group-hover:scale-100 transition-transform"></span>
-                Catálogo
-              </Link>
-            </li>
-            <li>
-              <Link href="/catalog" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary scale-0 group-hover:scale-100 transition-transform"></span>
-                Nuestro Catálogo
-              </Link>
-            </li>
-            <li>
-              <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary scale-0 group-hover:scale-100 transition-transform"></span>
+              <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors block">
                 Blog & Experiencias
               </Link>
             </li>
             <li>
-              <span className="text-gray-600 flex items-center gap-2 cursor-not-allowed select-none">
-                <span className="w-1.5 h-1.5 rounded-full bg-gray-600"></span>
+              <span className="text-gray-600 cursor-not-allowed select-none block">
                 Club (Próximamente)
               </span>
             </li>
             <li>
               <Link
                 href="/admin/products/new"
-                className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group"
+                className="text-muted-foreground hover:text-primary transition-colors block"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-primary scale-0 group-hover:scale-100 transition-transform"></span>
                 Admin Panel
+              </Link>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-bold text-lg mb-6 text-foreground">Legal</h4>
+          <ul className="space-y-3">
+            <li>
+              <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors block">
+                Política de Privacidad
+              </Link>
+            </li>
+            <li>
+              <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors block">
+                Términos del Servicio
               </Link>
             </li>
           </ul>
@@ -140,34 +140,9 @@ export default function Footer() {
             </li>
           </ul>
         </div>
-        <div className="md:col-span-1"> {/* Adjusted col-span to fit the new layout */}
-          <h4 className="font-bold text-lg mb-6 text-foreground">Legal</h4>
-          <ul className="space-y-3">
-            <li>
-              <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary scale-0 group-hover:scale-100 transition-transform"></span>
-                Política de Privacidad
-              </Link>
-            </li>
-            <li>
-              <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-2 group">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary scale-0 group-hover:scale-100 transition-transform"></span>
-                Términos del Servicio
-              </Link>
-            </li>
-          </ul>
-        </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground font-medium">
+      <div className="max-w-7xl mx-auto px-4 pt-8 border-t border-white/10 flex justify-center items-center text-xs text-muted-foreground font-medium">
         <p>© {new Date().getFullYear()} BuenCorte S.A.S. Todos los derechos reservados.</p>
-        <div className="flex gap-6">
-          <Link href="/privacy" className="hover:text-white transition-colors">
-            Privacidad
-          </Link>
-          <Link href="/terms" className="hover:text-white transition-colors">
-            Términos
-          </Link>
-        </div>
       </div>
     </footer>
   );

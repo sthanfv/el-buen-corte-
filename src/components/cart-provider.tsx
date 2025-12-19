@@ -7,6 +7,7 @@ interface CartContextType {
     order: OrderItem[];
     addToCart: (item: OrderItem) => void;
     removeFromCart: (index: number) => void;
+    updateCartItem: (orderId: string, updates: Partial<OrderItem>) => void;
     clearCart: () => void;
     isCartOpen: boolean;
     setIsCartOpen: (open: boolean) => void;
@@ -29,13 +30,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setOrder((prev) => prev.filter((_, i) => i !== index));
     };
 
+    const updateCartItem = (orderId: string, updates: Partial<OrderItem>) => {
+        setOrder((prev) => prev.map((item) =>
+            item.orderId === orderId ? { ...item, ...updates } : item
+        ));
+    };
+
     const clearCart = () => {
         setOrder([]);
     };
 
     return (
         <CartContext.Provider
-            value={{ order, addToCart, removeFromCart, clearCart, isCartOpen, setIsCartOpen }}
+            value={{ order, addToCart, removeFromCart, updateCartItem, clearCart, isCartOpen, setIsCartOpen }}
         >
             {children}
         </CartContext.Provider>

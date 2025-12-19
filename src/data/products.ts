@@ -25,6 +25,14 @@ export const COOKING_TEMPS = {
   },
 };
 
+export const PRODUCT_TAGS = {
+  tomahawk: ["asado", "parrilla", "blando", "res", "premium", "gigante", "hueso", "impresionar"],
+  puyazo: ["picaña", "asado", "jugoso", "grasa", "brasil", "parrilla"],
+  lomito: ["tierno", "suave", "magro", "niños", "dieta", "res", "filet mignons"],
+  costilla: ["cerdo", "ahumado", "bbq", "deshuesado", "suave", "horno"],
+  chorizo: ["entrada", "picada", "artesanal", "cerdo", "parrilla"],
+};
+
 export const formatPrice = (value: number) =>
   new Intl.NumberFormat(APP_CONFIG.locale, {
     style: 'currency',

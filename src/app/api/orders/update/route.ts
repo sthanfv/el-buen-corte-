@@ -1,31 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase';
-import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
+import { verifyAdmin } from '@/lib/auth-server';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
-        const headersList = await headers();
-        const authorization = headersList.get('Authorization');
-        const ip = headersList.get('x-forwarded-for') || 'unknown';
-
-        if (!authorization?.startsWith('Bearer ')) {
-            logger.audit('Unauthorized order update attempt: Missing token', { ip, endpoint: '/api/orders/update' });
-            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-        }
-        const idToken = authorization.split('Bearer ')[1];
-        let decodedToken;
-        try {
-            decodedToken = await adminAuth.verifyIdToken(idToken);
-        } catch (e) {
-            logger.audit('Unauthorized order update attempt: Invalid token', { ip, endpoint: '/api/orders/update' });
-            return NextResponse.json({ error: 'Sesión inválida' }, { status: 401 });
+        if (!await verifyAdmin(req)) {
+            return NextResponse.json({ error: 'Acceso denegado: Privilegios insuficientes' }, { status: 403 });
         }
 
-        if (decodedToken.admin !== true) {
-            logger.audit('Forbidden order update attempt: Non-admin user', { ip, uid: decodedToken.uid, endpoint: '/api/orders/update' });
-            return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-        }
+        // Recuperamos el token para trazabilidad (updatedBy)
+        const idToken = req.headers.get('Authorization')!.split('Bearer ')[1];
+        const decodedToken = await adminAuth.verifyIdToken(idToken);
 
         const { id, updates } = await req.json();
 
@@ -42,32 +28,62 @@ export async function POST(req: Request) {
         }
 
         const currentOrder = orderSnap.data();
-        const terminalStates = ['confirmed', 'preparing', 'delivered', 'cancelled'];
+        let currentStatus = (currentOrder?.status || 'CREATED').toUpperCase();
 
-        // If order is in a terminal or advanced state, restrict what can be changed
-        if (currentOrder && terminalStates.includes(currentOrder.status)) {
-            // Only allow updating internal notes or specific admin flags if needed
-            // But block changing the main status backwards or items (though items aren't in allowedFields anyway)
-            const restrictedFields = ['status']; // For example, can't change status once delivered
-            if (currentOrder.status === 'delivered' && updates.status) {
-                logger.warn('Blocked terminal state update', { orderId: id, currentStatus: currentOrder.status, requestedStatus: updates.status, adminUid: decodedToken.uid });
-                return NextResponse.json({ error: 'No se puede cambiar el estado de un pedido entregado' }, { status: 400 });
+        // Mapeo legado: pending -> PENDING_VERIFICATION
+        if (currentStatus === 'PENDING') currentStatus = 'PENDING_VERIFICATION';
+
+        const { status: rawNextStatus, transactionId, notes } = updates;
+        const nextStatus = rawNextStatus?.toUpperCase();
+
+        // ✅ FSM FLEXIBLE (MANDATO-FILTRO): Administradores pueden saltar estados
+        // Solo impedimos transiciones desde estados terminales (DELIVERED, CANCELLED)
+        const terminalStatuses = ['DELIVERED', 'CANCELLED'];
+
+        if (nextStatus && nextStatus !== currentStatus) {
+            if (terminalStatuses.includes(currentStatus)) {
+                return NextResponse.json({
+                    error: `No se puede modificar un pedido en estado terminal: ${currentStatus}`
+                }, { status: 400 });
+            }
+
+            // ✅ REGLA DE NEGOCIO: Conciliación financiera obligatoria al confirmar
+            if (nextStatus === 'CONFIRMED' && !transactionId && !currentOrder?.transactionId) {
+                return NextResponse.json({
+                    error: 'Se requiere un código de transacción para confirmar el pago'
+                }, { status: 400 });
             }
         }
 
-        // Sanitize updates - only allow specific fields
-        const allowedFields = ['status', 'notes', 'internalStatus'];
+        // Sanitize updates
         const sanitizedUpdates: any = {};
-        allowedFields.forEach(field => {
-            if (updates[field] !== undefined) {
-                sanitizedUpdates[field] = updates[field];
-            }
+        if (nextStatus) sanitizedUpdates.status = nextStatus;
+        if (transactionId) sanitizedUpdates.transactionId = transactionId;
+        if (notes) sanitizedUpdates.notes = notes;
+
+        // ✅ AUDITORÍA: Registro de transición e historial
+        const now = new Date();
+        const historyItem = {
+            status: nextStatus || currentStatus,
+            timestamp: now.toISOString(),
+            userId: decodedToken.uid,
+            isManualOverride: true, // Marcamos que fue una acción administrativa manual
+            durationMs: currentOrder?.updatedAt
+                ? now.getTime() - new Date(currentOrder.updatedAt).getTime()
+                : 0
+        };
+
+        sanitizedUpdates.updatedAt = now.toISOString();
+        sanitizedUpdates.updatedBy = decodedToken.uid;
+
+        // Usamos arrayUnion para no sobreescribir el historial
+        const { admin } = require('firebase-admin'); // Import dynamic if needed or use adminDb
+        const firebaseAdmin = require('firebase-admin');
+
+        await orderRef.update({
+            ...sanitizedUpdates,
+            history: firebaseAdmin.firestore.FieldValue.arrayUnion(historyItem)
         });
-
-        sanitizedUpdates.updatedAt = new Date().toISOString();
-        sanitizedUpdates.updatedBy = decodedToken.uid; // Traceability
-
-        await orderRef.update(sanitizedUpdates);
 
         logger.info('Order updated by admin', { orderId: id, adminUid: decodedToken.uid, updates: Object.keys(sanitizedUpdates) });
         return NextResponse.json({ success: true });

@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Settings } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function SettingsPage() {
@@ -53,18 +53,21 @@ export default function SettingsPage() {
     return (
         <AdminGuard>
             <div className="container mx-auto p-6 max-w-4xl">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-black">⚙️ Configuración del Sitio</h1>
-                    <p className="text-muted-foreground mt-2">
-                        Edita la información visible en el pie de página y contacto.
+                <div className="mb-10">
+                    <h1 className="text-4xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter flex items-center gap-3">
+                        <Settings className="w-8 h-8 text-primary" />
+                        Ajustes Globales
+                    </h1>
+                    <p className="text-sm font-medium text-muted-foreground mt-1">
+                        Personaliza la información de contacto y metadatos de la plataforma.
                     </p>
                 </div>
 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Card>
+                    <Card className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 shadow-xl">
                         <CardHeader>
-                            <CardTitle>Información de Contacto</CardTitle>
-                            <CardDescription>Estos datos aparecerán en el footer de todas las páginas.</CardDescription>
+                            <CardTitle className="text-xl font-black italic uppercase tracking-tighter mb-1">Información de Contacto</CardTitle>
+                            <CardDescription className="text-xs font-medium">Estos datos aparecerán en el pie de página de toda la web.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -86,9 +89,10 @@ export default function SettingsPage() {
                         </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 shadow-xl">
                         <CardHeader>
-                            <CardTitle>Contenido del Footer</CardTitle>
+                            <CardTitle className="text-xl font-black italic uppercase tracking-tighter mb-1">Identidad & Social Media</CardTitle>
+                            <CardDescription className="text-xs font-medium">Gestiona tu presencia digital y narrativa de marca.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">

@@ -1,18 +1,11 @@
-import { NextResponse } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebase';
-import { headers } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+import { adminDb } from '@/lib/firebase';
+import { verifyAdmin } from '@/lib/auth-server';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const headersList = await headers();
-    const authorization = headersList.get('Authorization');
-    if (!authorization?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const idToken = authorization.split('Bearer ')[1];
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    if (decodedToken.admin !== true) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!await verifyAdmin(req)) {
+      return NextResponse.json({ error: 'Acceso denegado: Privilegios insuficientes' }, { status: 403 });
     }
 
     const snapshot = await adminDb

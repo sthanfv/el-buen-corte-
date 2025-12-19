@@ -16,31 +16,39 @@ export default function AdminGuard({
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        setAllow(false);
         router.push('/admin/login');
         return;
       }
 
       try {
-        // Forzar la actualización del token para obtener los claims más recientes.
         const tokenResult = await getIdTokenResult(user, true);
 
-        // Whitelist de desarrollo/emergencia y entorno
+        // logs de depuración (MANDATO-FILTRO)
+        console.log("DEBUG AUTH:", {
+          uid: user.uid,
+          email: user.email,
+          providerId: user.providerData[0]?.providerId,
+          claims: tokenResult.claims
+        });
+
         const envWhitelist = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
         const WHITELIST = ['fv9316@gmail.com', 'admin@buencorte.co', ...envWhitelist];
 
         const isWhitelisted = user.email && WHITELIST.includes(user.email.toLowerCase());
-
         const isAdmin = tokenResult.claims.admin === true || isWhitelisted;
 
         if (isAdmin) {
           setAllow(true);
         } else {
-          console.error(`Acceso denegado. El usuario ${user.email} no tiene permisos de administrador.`);
+          console.error(`Acceso denegado: El usuario ${user.email || user.uid || 'desconocido'} no tiene privilegios.`);
+          setAllow(false);
           await auth.signOut();
           router.push('/admin/login');
         }
       } catch (error) {
-        console.error('Error verificando el token de administrador:', error);
+        console.error('Error en validación de privilegios:', error);
+        setAllow(false);
         router.push('/admin/login');
       }
     });

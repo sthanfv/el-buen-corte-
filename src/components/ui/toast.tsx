@@ -202,7 +202,7 @@ const ToastCard: React.FC<{ toast: ToastItem; onClose: () => void }> = ({
         <X size={16} />
       </button>
       <div
-        className={`absolute bottom-0 left-0 h-[3px] ${barColor} transition-all duration-75`}
+        className={`absolute bottom-0 left-0 h-[3.5px] ${barColor} transition-all duration-75 rounded-b-xl opacity-80`}
         style={{ width: `${progress}%` }}
       />
     </div>

@@ -7,7 +7,7 @@ import AdminGuard from '@/components/AdminGuard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, DollarSign, Package, TrendingUp, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Calendar, DollarSign, Package, TrendingUp, Clock, CheckCircle2, XCircle, FileText } from 'lucide-react';
 import { formatPrice } from '@/lib/salesbot-messages';
 
 interface Ticket {
@@ -114,73 +114,72 @@ export default function VentasPage() {
         <AdminGuard>
             <div className="container mx-auto p-6 max-w-7xl">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-black">📊 Historial de Ventas</h1>
-                        <p className="text-muted-foreground mt-2">
-                            Consulta todos los pedidos y tickets generados
-                        </p>
-                    </div>
+                <div className="mb-10">
+                    <h1 className="text-4xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter flex items-center gap-3">
+                        <TrendingUp className="w-8 h-8 text-primary" />
+                        Historial de Ventas
+                    </h1>
+                    <p className="text-sm font-medium text-muted-foreground mt-1">
+                        Auditoría completa de tickets y flujo de caja histórico.
+                    </p>
                 </div>
 
-                {/* Date Filter */}
-                <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2">Fecha de Consulta:</label>
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="px-4 py-2 border rounded-lg"
-                    />
-                    <Button onClick={fetchTickets} className="ml-4">
-                        Consultar
+                <div className="mb-10 bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-black/5 dark:border-white/5 shadow-xl flex flex-wrap items-end gap-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fecha de Consulta</label>
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="block w-full px-4 py-2 bg-gray-50 dark:bg-black border border-black/10 dark:border-white/10 rounded-xl font-bold focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                        />
+                    </div>
+                    <Button onClick={fetchTickets} className="h-11 px-8 font-black italic uppercase tracking-widest bg-black dark:bg-white dark:text-black hover:bg-primary hover:text-white transition-all duration-300">
+                        Consultar Archivo
                     </Button>
                 </div>
 
                 {/* Summary Cards */}
                 {summary && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                        <Card>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                        <Card className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 shadow-xl hover:border-primary/30 transition-all">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Pedidos</CardTitle>
-                                <Package className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Pedidos</CardTitle>
+                                <Package className="h-4 w-4 text-primary" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{summary.totalTickets}</div>
+                                <div className="text-3xl font-black italic">{summary.totalTickets}</div>
                             </CardContent>
                         </Card>
-
-                        <Card>
+                        <Card className="bg-black text-white border-primary/20 shadow-2xl">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Ventas</CardTitle>
-                                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-primary/70">Total Ventas</CardTitle>
+                                <DollarSign className="h-4 w-4 text-primary" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">
+                                <div className="text-3xl font-black italic text-primary">
                                     ${summary.totalAmount.toLocaleString('es-CO')}
                                 </div>
                             </CardContent>
                         </Card>
-
-                        <Card>
+                        <Card className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 shadow-xl">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Entregados</CardTitle>
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Entregados</CardTitle>
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-green-600">
+                                <div className="text-3xl font-black italic text-green-500">
                                     {summary.byStatus.delivered}
                                 </div>
                             </CardContent>
                         </Card>
-
-                        <Card>
+                        <Card className="bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 shadow-xl">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-                                <Clock className="h-4 w-4 text-yellow-600" />
+                                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pendientes</CardTitle>
+                                <Clock className="h-4 w-4 text-yellow-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-yellow-600">
+                                <div className="text-3xl font-black italic text-yellow-500">
                                     {summary.byStatus.pending}
                                 </div>
                             </CardContent>
@@ -206,18 +205,21 @@ export default function VentasPage() {
                                 {tickets.map((ticket) => (
                                     <div
                                         key={ticket.id}
-                                        className="border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+                                        className="group relative bg-gray-50/50 dark:bg-black/20 border border-black/5 dark:border-white/5 rounded-2xl p-6 hover:border-primary/50 transition-all duration-500 hover:shadow-2xl overflow-hidden"
                                     >
+                                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 transition-opacity">
+                                            <FileText className="w-20 h-20 rotate-12" />
+                                        </div>
                                         <div className="flex items-start justify-between mb-3">
-                                            <div>
-                                                <h3 className="font-semibold text-lg">
+                                            <div className="relative z-10">
+                                                <h3 className="font-black text-2xl italic uppercase tracking-tighter">
                                                     {ticket.ticketId}
-                                                    <span className="text-muted-foreground text-sm ml-2">
+                                                    <span className="text-primary text-[10px] font-bold tracking-widest ml-3 px-2 py-1 bg-primary/10 rounded-full">
                                                         #{ticket.orderNumber}
                                                     </span>
                                                 </h3>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {formatDate(ticket.createdAt)}
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 mt-1">
+                                                    <Clock size={12} /> {formatDate(ticket.createdAt)}
                                                 </p>
                                             </div>
                                             <Badge className={STATUS_COLORS[ticket.status]}>
@@ -253,9 +255,9 @@ export default function VentasPage() {
                                                     </li>
                                                 ))}
                                             </ul>
-                                            <div className="border-t mt-2 pt-2 flex justify-between font-bold">
-                                                <span>TOTAL:</span>
-                                                <span className="text-primary">
+                                            <div className="border-t border-black/5 dark:border-white/5 mt-4 pt-4 flex justify-between items-baseline">
+                                                <span className="text-xs font-black uppercase text-muted-foreground italic">Total Liquidado:</span>
+                                                <span className="text-3xl font-black italic text-primary">
                                                     ${ticket.totalAmount.toLocaleString('es-CO')}
                                                 </span>
                                             </div>

@@ -24,7 +24,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Trash2, Edit } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Loader2, Plus, Trash2, Edit, Package } from 'lucide-react';
 import { formatPrice } from '@/data/products';
 import AdminGuard from '@/components/AdminGuard';
 import { auth } from '@/firebase/client'; // Corrected import
@@ -102,11 +103,12 @@ export default function ProductsPage() {
       <div>
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 dark:text-white">
+            <h1 className="text-4xl font-black text-gray-900 dark:text-white italic uppercase tracking-tighter flex items-center gap-3">
+              <Package className="w-8 h-8 text-primary" />
               Gestión de Productos
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Añade, edita o elimina cortes del catálogo.
+            <p className="text-sm font-medium text-muted-foreground mt-1">
+              Añade, edita o elimina cortes del catálogo maestro.
             </p>
           </div>
           <Link href="/admin/products/new" passHref>
@@ -151,20 +153,18 @@ export default function ProductsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((p) => (
-              <Card key={p.id} className="flex flex-col">
-                <CardHeader>
+              <Card key={p.id} className="group relative overflow-hidden bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:-translate-y-1">
+                <CardHeader className="relative z-10">
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle>{p.name}</CardTitle>
-                      <Badge variant="secondary" className="mt-2">
+                      <CardTitle className="text-2xl font-black italic uppercase tracking-tighter mb-1">{p.name}</CardTitle>
+                      <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold text-[10px] uppercase tracking-widest">
                         {p.category}
                       </Badge>
                     </div>
-                    <div className="relative w-16 h-16 rounded-md overflow-hidden border">
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-black/5 dark:border-white/10 shadow-lg group-hover:scale-110 transition-transform duration-500">
                       <Image
-                        src={
-                          p.images?.[0]?.src || 'https://placehold.co/100x100'
-                        }
+                        src={p.images?.[0]?.src || 'https://placehold.co/100x100'}
                         alt={p.images?.[0]?.alt || p.name}
                         fill
                         className="object-cover"
@@ -172,21 +172,25 @@ export default function ProductsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-lg font-bold text-primary">
-                    {formatPrice(p.pricePerKg)}
-                    <span className="text-sm font-normal text-muted-foreground">
-                      / Kg
-                    </span>
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Stock: {p.stock} unidades
-                  </p>
+                <CardContent className="relative z-10 flex-grow pt-0">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-primary italic">{formatPrice(p.pricePerKg)}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">/ Kg</span>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full animate-pulse",
+                      p.stock > 0 ? "bg-green-500" : "bg-red-500"
+                    )} />
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">
+                      Stock: <span className="text-foreground">{p.stock} unidades</span>
+                    </p>
+                  </div>
                 </CardContent>
-                <CardFooter className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" asChild>
+                <CardFooter className="relative z-10 flex justify-end gap-2 bg-gray-50/50 dark:bg-black/20 p-4 border-t dark:border-white/5">
+                  <Button variant="ghost" size="sm" asChild className="hover:bg-primary/10 hover:text-primary font-bold uppercase text-[10px] tracking-widest">
                     <Link href={`/admin/products/edit/${p.id}`}>
-                      <Edit className="mr-2 h-3 w-3" />
+                      <Edit className="mr-1.5 h-3.5 w-3.5" />
                       Editar
                     </Link>
                   </Button>

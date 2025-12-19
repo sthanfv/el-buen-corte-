@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/form';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Upload } from 'lucide-react';
+import { Loader2, ArrowLeft, Upload, Scale } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
 import { auth } from '@/firebase/client';
 import type { Product } from '@/types/products';
@@ -52,6 +52,11 @@ const editProductSchema = z.object({
   pairing: z.string().max(100, 'Texto demasiado largo').optional(),
   badge: z.string().max(50, 'Badge demasiado largo').optional(),
   corte: z.string().max(500, 'Descripción demasiado larga').optional(),
+  // ✅ MITIGACIÓN OPERATIVA
+  weightLabel: z.string().optional(),
+  minWeight: z.coerce.number().optional(),
+  isFixedPrice: z.boolean().default(false),
+  basePrice: z.coerce.number().optional(),
 });
 
 type EditProductFormValues = z.infer<typeof editProductSchema>;
@@ -80,13 +85,16 @@ export default function EditProductPage() {
       pairing: '',
       badge: '',
       corte: '',
+      weightLabel: '',
+      minWeight: 0,
+      isFixedPrice: false,
+      basePrice: 0,
     },
   });
 
   // ✅ SECURITY: Fetch con validación de ID
   useEffect(() => {
     async function fetchProduct() {
-      // Validate productId format (prevent injection)
       if (!productId || typeof productId !== 'string' || productId.length > 50) {
         toast({
           type: 'error',
@@ -120,6 +128,10 @@ export default function EditProductPage() {
           pairing: String(product.pairing || '').substring(0, 100),
           badge: String(product.badge || '').substring(0, 50),
           corte: String(product.details?.corte || '').substring(0, 500),
+          weightLabel: String(product.weightLabel || ''),
+          minWeight: Number(product.minWeight) || 0,
+          isFixedPrice: Boolean(product.isFixedPrice),
+          basePrice: Number(product.basePrice) || 0,
         });
 
         if (product.images && product.images.length > 0) {
@@ -145,7 +157,6 @@ export default function EditProductPage() {
     setUploadProgress(0);
 
     try {
-      // ✅ SECURITY: Get fresh token
       const idToken = await auth.currentUser?.getIdToken(true);
       if (!idToken) {
         throw new Error('Sesión expirada. Por favor, recarga la página.');
@@ -153,11 +164,8 @@ export default function EditProductPage() {
 
       let imageUrl = currentImageUrl;
 
-      // Upload new image if provided
       if (data.image && data.image.length > 0) {
         const file = data.image[0] as File;
-
-        // ✅ SECURITY: Validate file type and size
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
         const maxSize = 5 * 1024 * 1024; // 5MB
 
@@ -194,7 +202,6 @@ export default function EditProductPage() {
         setUploadProgress(60);
       }
 
-      // ✅ SECURITY: Prepare sanitized data
       const productData = {
         name: data.name.trim(),
         category: data.category.trim(),
@@ -215,11 +222,14 @@ export default function EditProductPage() {
         },
         pairing: data.pairing?.trim() || '',
         badge: data.badge?.trim() || '',
+        weightLabel: data.weightLabel?.trim() || '',
+        minWeight: data.minWeight || 0,
+        isFixedPrice: data.isFixedPrice || false,
+        basePrice: data.basePrice || 0,
       };
 
       setUploadProgress(80);
 
-      // ✅ SECURITY: Call update API with validation
       const updateRes = await fetch('/api/products/update', {
         method: 'POST',
         headers: {
@@ -245,7 +255,6 @@ export default function EditProductPage() {
         message: `${data.name} ha sido actualizado exitosamente.`,
       });
 
-      // Redirect after success
       setTimeout(() => {
         router.push('/admin/products');
       }, 1000);
@@ -486,6 +495,79 @@ export default function EditProductPage() {
                     <FormControl>
                       <Input placeholder="Ej: Premium" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <h2 className="text-xl font-bold border-b pb-2 mt-10 text-primary flex items-center gap-2">
+              <Scale className="h-5 w-5" /> Control de Peso Variable (Mitigación)
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-muted/30 p-4 rounded-lg border border-primary/10">
+              <FormField
+                control={form.control}
+                name="weightLabel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rango de Peso (Etiqueta)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: Aprox. 900g - 1.1kg" {...field} />
+                    </FormControl>
+                    <FormDescription>Lo que el cliente verá en la web.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="minWeight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Peso Mínimo Garantizado (Kg)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" placeholder="Ej: 0.9" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-4 border rounded-lg bg-primary/5">
+              <FormField
+                control={form.control}
+                name="isFixedPrice"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Input
+                        type="checkbox"
+                        className="w-4 h-4 mt-1"
+                        checked={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Vender por Pieza Fija</FormLabel>
+                      <FormDescription>
+                        Si se activa, se ignora el gramaje exacto para el cobro.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="basePrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Precio por Pieza (Estandarizado)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Ej: 50000" {...field} disabled={!form.watch('isFixedPrice')} />
+                    </FormControl>
+                    <FormDescription>Precio final que paga el cliente.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
