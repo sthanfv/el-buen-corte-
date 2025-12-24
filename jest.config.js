@@ -14,8 +14,9 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/src/$1',
     'lucide-react': '<rootDir>/__mocks__/lucide-react.js',
   },
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/tests/'],
   transformIgnorePatterns: [
-    '/node_modules/(?!lucide-react|@radix-ui|next-themes|class-variance-authority|clsx|tailwind-merge|firebase|@firebase)',
+    '/node_modules/(?!lucide-react|@radix-ui|next-themes|class-variance-authority|clsx|tailwind-merge|firebase|@firebase|resend)',
   ],
 };
 

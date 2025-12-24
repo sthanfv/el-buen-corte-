@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 export const OrderStatusEnum = z.enum([
-  'CREATED',                // Recién llegado
-  'PENDING_VERIFICATION',   // Esperando que admin valide pago
-  'CONFIRMED',              // Pago validado financieramente
-  'CUTTING',                // En carnicería (Corte en proceso)
-  'PACKING',                // En empaque (Sellado al vacío)
-  'ROUTING',                // En ruta (Domiciliario asignado)
-  'DELIVERED',              // Entregado con éxito
-  'CANCELLED'               // Cancelado por cliente o fraude
+  'CREATED',
+  'WAITING_PAYMENT',
+  'PAID_VERIFIED',
+  'CUTTING',
+  'PACKING',
+  'ROUTING',
+  'DELIVERED',
+  'CANCELLED_TIMEOUT',
 ]);
 export type OrderStatus = z.infer<typeof OrderStatusEnum>;
 
@@ -45,18 +45,44 @@ export const CustomerInfoSchema = z.object({
     .string()
     .min(10, 'Dirección muy corta')
     .max(200, 'Dirección demasiado larga')
-    .regex(/^[a-zA-Z0-9\s#.,\-\u00C0-\u017F]+$/, 'Dirección contiene caracteres no permitidos'),
+    .regex(
+      /^[a-zA-Z0-9\s#.,\-\u00C0-\u017F]+$/,
+      'Dirección contiene caracteres no permitidos'
+    ),
 
   customerEmail: z.string().email('Email inválido').optional(), // Para retención/LTV
-  neighborhood: z.string().max(100).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s0-9]+$/, 'Barrio inválido').optional(),
-  city: z.string().min(2).max(100).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'Ciudad inválida'),
-  notes: z.string().max(500).regex(/^[a-zA-Z0-9\s.,!¡?¿\u00C0-\u017F]*$/, 'Notas contienen caracteres no permitidos').optional(),
+  neighborhood: z
+    .string()
+    .max(100)
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s0-9]+$/, 'Barrio inválido')
+    .optional(),
+  city: z
+    .string()
+    .min(2)
+    .max(100)
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'Ciudad inválida'),
+  notes: z
+    .string()
+    .max(500)
+    .regex(
+      /^[a-zA-Z0-9\s.,!¡?¿\u00C0-\u017F]*$/,
+      'Notas contienen caracteres no permitidos'
+    )
+    .optional(),
   deliveryDate: z.string().optional(),
   deliveryTime: z.string().optional(),
 
   // ✅ FACTURACIÓN ELECTRÓNICA (MANDATO-FILTRO - Cumplimiento Legal Colombia)
-  requiresInvoice: z.boolean().default(false).describe('Si requiere factura electrónica'),
-  invoiceNIT: z.string().min(9, 'NIT inválido').max(15).regex(/^[0-9-]+$/, 'NIT solo debe contener números y guiones').optional(),
+  requiresInvoice: z
+    .boolean()
+    .default(false)
+    .describe('Si requiere factura electrónica'),
+  invoiceNIT: z
+    .string()
+    .min(9, 'NIT inválido')
+    .max(15)
+    .regex(/^[0-9-]+$/, 'NIT solo debe contener números y guiones')
+    .optional(),
   invoiceCompanyName: z.string().min(3).max(200).optional(),
   invoiceEmail: z.string().email('Email de facturación inválido').optional(),
 });
@@ -70,20 +96,36 @@ export const OrderSchema = z.object({
   total: z.number().positive(),
   paymentMethod: z.enum(['efectivo', 'transferencia']),
   status: OrderStatusEnum.default('CREATED'),
+  expiresAt: z.number().optional(), // Timestamp ms
   createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
 
   // ✅ CONCILIACIÓN FINANCIERA (MANDATO-FILTRO)
-  transactionId: z.string().min(5, 'Código de transacción requerido').optional(),
+  transactionId: z
+    .string()
+    .min(5, 'Código de transacción requerido')
+    .optional(),
   verifiedAt: z.string().optional(),
   verifiedBy: z.string().optional(),
+  deliveredAt: z.string().optional(), // Fecha de entrega real
 
   // ✅ AUDITORÍA DE FSM & OBSERVABILIDAD
-  history: z.array(z.object({
-    status: OrderStatusEnum,
-    timestamp: z.string(),
-    userId: z.string().optional(),
-    durationMs: z.number().optional(), // Para métricas de eficiencia
-  })).default([]),
+  history: z
+    .array(
+      z.object({
+        status: OrderStatusEnum.optional(), // Backward comp
+        timestamp: z.string().optional(),
+        userId: z.string().optional(),
+        durationMs: z.number().optional(),
+        // New fields
+        at: z.number().optional(),
+        from: z.string().optional(),
+        to: z.string().optional(),
+        by: z.string().optional(),
+        isManualOverride: z.boolean().optional(),
+      })
+    )
+    .default([]),
 
   // ✅ RETENCIÓN: Control de automatización
   reminded: z.boolean().default(false),
@@ -92,6 +134,13 @@ export const OrderSchema = z.object({
   // ⚠️ SECURITY: These fields MUST ONLY be set server-side
   ipAddress: z.string().optional(),
   userAgent: z.string().optional(),
+
+  // ✅ PRIVACIDAD (MANDATO-FILTRO)
+  habeasDataAccepted: z.literal(true, {
+    errorMap: () => ({
+      message: 'Debes aceptar la política de tratamiento de datos personales.',
+    }),
+  }),
 });
 
 export type Order = z.infer<typeof OrderSchema> & { id?: string };
@@ -125,4 +174,3 @@ export const RateLimitCheckSchema = z.object({
 });
 
 export type RateLimitCheck = z.infer<typeof RateLimitCheckSchema>;
-

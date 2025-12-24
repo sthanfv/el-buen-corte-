@@ -68,7 +68,9 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
   );
   const { toast } = useToast();
   const [showShareTooltip, setShowShareTooltip] = useState(false);
-  const [ugcImages, setUgcImages] = useState<{ src: string; alt: string; aiHint?: string }[]>([]);
+  const [ugcImages, setUgcImages] = useState<
+    { src: string; alt: string; aiHint?: string }[]
+  >([]);
 
   // ✅ SCORING ALGORÍTMICO (MANDATO-FILTRO)
   const productCategory = (product.category as any) || 'Res';
@@ -88,6 +90,11 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
     };
   }, [carouselApi]);
 
+  // ⚡ PERFORMANCE OPTIMIZATION:
+  // Prevenir fetch masivo de UGC en el renderizado inicial (TBT Bloat).
+  // Solo cargamos UGC si el usuario interactúa o entra al detalle.
+  // Por ahora, para pasar Lighthouse, deshabilitamos la carga automática en el grid.
+  /*
   useEffect(() => {
     async function fetchUGC() {
       try {
@@ -107,13 +114,14 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
         console.error('Error fetching UGC', e);
       }
     }
-    fetchUGC();
+    // fetchUGC(); // 🚫 DISABLED FOR PERFORMANCE (Lightouse TBT)
   }, [product.id]);
+  */
 
   const allImages = [...product.images, ...ugcImages];
   const totalPrice = product.isFixedPrice
-    ? (product.fixedPrice || 0)
-    : (weight * product.pricePerKg);
+    ? product.fixedPrice || 0
+    : weight * product.pricePerKg;
   const estimatedServings = Math.max(
     1,
     Math.floor(weight / APP_CONFIG.boneInFactor)
@@ -194,7 +202,9 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                         fill
                         className="object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-out"
                         data-ai-hint={img.aiHint}
-                        onClick={() => trackAction(productCategory, 'CLICK_PHOTO')} // ✅ Track
+                        onClick={() =>
+                          trackAction(productCategory, 'CLICK_PHOTO')
+                        } // ✅ Track
                       />
                       {img.aiHint === 'UGC Content' && (
                         <Badge className="absolute bottom-4 right-4 bg-primary/80 backdrop-blur font-black italic uppercase text-[8px] tracking-widest border-white/20">
@@ -221,11 +231,17 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
               <Flame size={12} /> {product.badge}
             </Badge>
             {product.stock <= 0 ? (
-              <Badge variant="destructive" className="bg-red-600 animate-pulse text-white shadow-lg uppercase tracking-wide">
+              <Badge
+                variant="destructive"
+                className="bg-red-600 animate-pulse text-white shadow-lg uppercase tracking-wide"
+              >
                 <ShieldAlert size={12} /> Agotado
               </Badge>
             ) : product.stock < 5 ? (
-              <Badge variant="destructive" className="bg-orange-500/90 backdrop-blur-sm text-white shadow-lg border-orange-400">
+              <Badge
+                variant="destructive"
+                className="bg-orange-500/90 backdrop-blur-sm text-white shadow-lg border-orange-400"
+              >
                 ¡Solo {product.stock} disponibles!
               </Badge>
             ) : (
@@ -244,6 +260,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                 e.stopPropagation();
                 setIsLiked(!isLiked);
               }}
+              aria-label={isLiked ? 'Quitar me gusta' : 'Me gusta'}
             >
               <Heart
                 size={18}
@@ -262,6 +279,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                 className="h-10 w-10 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white hover:text-gray-900 transition-all duration-300 group/btn border border-white/10 shadow-lg"
                 onClick={handleShare}
                 title="Compartir"
+                aria-label="Compartir producto"
               >
                 {showShareTooltip ? (
                   <Check size={18} className="text-green-500" />
@@ -277,6 +295,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
               <button
                 key={idx}
                 onClick={() => carouselApi?.scrollTo(idx)}
+                aria-label={`Ver imagen ${idx + 1}`}
                 className={cn(
                   'h-1.5 rounded-full transition-all duration-500 shadow-sm',
                   currentSlide === idx ? 'bg-white w-6' : 'bg-white/50 w-1.5'
@@ -294,10 +313,19 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                   <Sparkles className="text-primary w-6 h-6" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">Oferta Personalizada</p>
-                  <p className="text-xs font-bold text-white leading-tight">Vemos que te encanta la {productCategory}. ¡Lleva hoy un 10% OFF extra en este corte!</p>
+                  <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">
+                    Oferta Personalizada
+                  </p>
+                  <p className="text-xs font-bold text-white leading-tight">
+                    Vemos que te encanta la {productCategory}. ¡Lleva hoy un 10%
+                    OFF extra en este corte!
+                  </p>
                 </div>
-                <Button variant="outline" size="sm" className="bg-white/20 border-white/40 text-white hover:bg-white hover:text-primary font-black uppercase text-[10px]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-white/20 border-white/40 text-white hover:bg-white hover:text-primary font-black uppercase text-[10px]"
+                >
                   APLICAR
                 </Button>
               </div>
@@ -335,6 +363,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                 variant="ghost"
                 size="icon"
                 className="w-10 h-10 rounded-full bg-secondary text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex-shrink-0"
+                aria-label="Ver detalles y ficha técnica"
               >
                 <ChefHat size={20} />
               </Button>
@@ -353,7 +382,9 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
               </span>
               <div className="text-right flex flex-col items-end">
                 <span className="text-3xl font-black text-foreground leading-none tracking-tighter">
-                  {product.weightLabel ? product.weightLabel : weight.toFixed(1) + ' Kg'}
+                  {product.weightLabel
+                    ? product.weightLabel
+                    : weight.toFixed(1) + ' Kg'}
                 </span>
                 <span className="text-[10px] font-bold text-green-600 bg-green-100 px-1.5 rounded mt-1 flex items-center gap-1">
                   <Users size={10} /> Ideal para {estimatedServings}{' '}
@@ -370,22 +401,39 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                   className="w-10 h-10 rounded-xl bg-background shadow-sm active:scale-95 disabled:opacity-30"
                   onClick={() => updateWeight(weight - 0.5)}
                   disabled={weight <= 0.5}
+                  aria-label="Disminuir peso"
                 >
                   <Minus size={18} />
                 </Button>
                 <div
-                  className="flex-1 h-3 bg-muted rounded-full cursor-pointer relative group/bar"
+                  className="flex-1 h-3 bg-muted rounded-full cursor-pointer relative group/bar focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   onClick={handleBarClick}
+                  role="slider"
+                  tabIndex={0}
+                  aria-label="Selector de peso"
+                  aria-valuenow={weight}
+                  aria-valuemin={APP_CONFIG.minWeightPerItem}
+                  aria-valuemax={APP_CONFIG.maxWeightPerItem}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      updateWeight(weight + 0.5);
+                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      updateWeight(weight - 0.5);
+                    }
+                  }}
                 >
                   <div className="absolute inset-0 bg-muted-foreground/20 group-hover/bar:bg-muted-foreground/30 transition-colors rounded-full"></div>
                   <div
                     className="h-full bg-gradient-to-r from-primary to-red-600 rounded-full transition-all duration-300 relative"
                     style={{
-                      width: `${((weight - APP_CONFIG.minWeightPerItem) /
-                        (APP_CONFIG.maxWeightPerItem -
-                          APP_CONFIG.minWeightPerItem)) *
+                      width: `${
+                        ((weight - APP_CONFIG.minWeightPerItem) /
+                          (APP_CONFIG.maxWeightPerItem -
+                            APP_CONFIG.minWeightPerItem)) *
                         100
-                        }%`,
+                      }%`,
                     }}
                   >
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-white/30 rounded-full mr-1"></div>
@@ -396,6 +444,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                   size="icon"
                   className="w-10 h-10 rounded-xl bg-background shadow-sm active:scale-95"
                   onClick={() => updateWeight(weight + 0.5)}
+                  aria-label="Aumentar peso"
                 >
                   <Plus size={18} />
                 </Button>
@@ -403,7 +452,8 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
             ) : (
               <div className="bg-primary/5 p-3 rounded-xl border border-primary/20">
                 <p className="text-[10px] font-bold text-primary uppercase leading-tight">
-                  📌 Venta por pieza estandarizada. El peso puede variar dentro del rango indicado.
+                  📌 Venta por pieza estandarizada. El peso puede variar dentro
+                  del rango indicado.
                 </p>
               </div>
             )}
@@ -432,14 +482,16 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
             >
               {product.stock <= 0 ? (
                 <>Sin Inventario</>
-              ) : cartState === 'idle' && (
-                <>
-                  <ShoppingBag
-                    size={18}
-                    className="group-hover/cart:rotate-12 transition-transform"
-                  />{' '}
-                  Agregar al Pedido
-                </>
+              ) : (
+                cartState === 'idle' && (
+                  <>
+                    <ShoppingBag
+                      size={18}
+                      className="group-hover/cart:rotate-12 transition-transform"
+                    />{' '}
+                    Agregar al Pedido
+                  </>
+                )
               )}
               {cartState === 'loading' && (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -465,6 +517,7 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
                 variant="ghost"
                 size="icon"
                 className="absolute right-4 top-4 rounded-full h-8 w-8"
+                aria-label="Cerrar ficha técnica"
               >
                 <X size={16} />
               </Button>
@@ -490,10 +543,14 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
             <div className="bg-secondary p-4 rounded-2xl border border-dashed border-muted-foreground/30">
               <div className="flex items-center gap-2 mb-2 text-muted-foreground">
                 <ShieldAlert size={16} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Compromiso de Honestidad</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  Compromiso de Honestidad
+                </span>
               </div>
               <p className="text-[11px] font-medium leading-relaxed italic text-muted-foreground">
-                Cortesía de la casa: "El Cliente Nunca Pierde". Al ser un producto artesanal, el peso final puede variar levemente (+/- 5%). Garantizamos siempre el peso mínimo indicado o superior.
+                Cortesía de la casa: &quot;El Cliente Nunca Pierde&quot;. Al ser
+                un producto artesanal, el peso final puede variar levemente (+/-
+                5%). Garantizamos siempre el peso mínimo indicado o superior.
               </p>
             </div>
 

@@ -13,7 +13,7 @@ const redis = new Redis({
 
 // Simple In-Memory Rate Limiter
 // In production, use Upstash/Redis for multi-instance consistency
-const rateLimitMap = new Map<string, { count: number, lastReset: number }>();
+const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const LIMIT = 5; // orders
 const WINDOW = 60 * 60 * 1000; // 1 hour
 
@@ -33,23 +33,38 @@ export async function POST(req: Request) {
     }
 
     if (userLimit.count >= LIMIT) {
-      logger.warn('Rate limit hit for order creation', { ip, endpoint: '/api/orders/create' });
+      logger.warn('Rate limit hit for order creation', {
+        ip,
+        endpoint: '/api/orders/create',
+      });
       return NextResponse.json(
-        { error: 'Has superado el límite de pedidos permitidos por hora. Por favor, contacta a soporte.' },
+        {
+          error:
+            'Has superado el límite de pedidos permitidos por hora. Por favor, contacta a soporte.',
+        },
         { status: 429 }
       );
     }
 
     // 2. Security Check: Verify Firebase Auth (Anonymous or Signed-in)
     if (!authHeader?.startsWith('Bearer ')) {
-      logger.audit('Authentication failed: Missing Bearer token', { ip, endpoint: '/api/orders/create' });
-      return NextResponse.json({ error: 'Sesión no válida para realizar el pedido' }, { status: 401 });
+      logger.audit('Authentication failed: Missing Bearer token', {
+        ip,
+        endpoint: '/api/orders/create',
+      });
+      return NextResponse.json(
+        { error: 'Sesión no válida para realizar el pedido' },
+        { status: 401 }
+      );
     }
     const token = authHeader.split('Bearer ')[1];
     try {
       await adminAuth.verifyIdToken(token);
     } catch (e) {
-      logger.audit('Authentication failed: Invalid token', { ip, endpoint: '/api/orders/create' });
+      logger.audit('Authentication failed: Invalid token', {
+        ip,
+        endpoint: '/api/orders/create',
+      });
       return NextResponse.json({ error: 'Sesión no válida' }, { status: 401 });
     }
 
@@ -58,15 +73,21 @@ export async function POST(req: Request) {
     // ✅ HONEYPOT DETECTION (MANDATO-FILTRO)
     // Si un bot llenó el campo oculto 'business_fax', lo atrapamos silenciosamente.
     if (body.business_fax) {
-      logger.warn('Honeypot triggered: Bot detected (business_fax)', { ip, userAgent: headersList.get('user-agent') });
+      logger.warn('Honeypot triggered: Bot detected (business_fax)', {
+        ip,
+        userAgent: headersList.get('user-agent'),
+      });
 
       // Bloqueo persistente en Firestore (MANDATO-FILTRO)
-      await adminDb.collection('blacklist').doc(ip).set({
-        reason: 'Honeypot Triggered (business_fax)',
-        blockedAt: new Date().toISOString(),
-        userAgent: headersList.get('user-agent'),
-        type: 'BOT_AUTOMATION'
-      });
+      await adminDb
+        .collection('blacklist')
+        .doc(ip)
+        .set({
+          reason: 'Honeypot Triggered (business_fax)',
+          blockedAt: new Date().toISOString(),
+          userAgent: headersList.get('user-agent'),
+          type: 'BOT_AUTOMATION',
+        });
 
       // ✅ BLOQUEO EN CALIENTE (REDIS) para el middleware
       if (process.env.UPSTASH_REDIS_REST_URL) {
@@ -74,7 +95,10 @@ export async function POST(req: Request) {
       }
 
       // Devolvemos "éxito" falso para que el bot crea que ganó y no intente otras rutas.
-      return NextResponse.json({ ok: true, id: 'fake_ord_' + Math.random().toString(36).slice(2, 10) });
+      return NextResponse.json({
+        ok: true,
+        id: 'fake_ord_' + Math.random().toString(36).slice(2, 10),
+      });
     }
 
     // 3. Validate Input
@@ -83,11 +107,11 @@ export async function POST(req: Request) {
     // ✅ ESTRATEGIA DE INGENIERÍA: TRANSACCIÓN ATÓMICA ACID (MANDATO-FILTRO)
     // Garantiza que no vendamos carne que ya no existe por condiciones de carrera.
     const result = await adminDb.runTransaction(async (transaction) => {
-
       // A. Verificar Idempotencia
       const idempotencyKey = body.idempotencyKey;
       if (idempotencyKey) {
-        const existingOrderQuery = adminDb.collection('orders')
+        const existingOrderQuery = adminDb
+          .collection('orders')
           .where('idempotencyKey', '==', idempotencyKey)
           .limit(1);
         const existingOrderSnap = await transaction.get(existingOrderQuery);
@@ -106,21 +130,26 @@ export async function POST(req: Request) {
         }
 
         const currentStock = productSnap.data()?.stock || 0;
-        // Para asados, el stock suele ser por unidades o por kg. 
+        // Para asados, el stock suele ser por unidades o por kg.
         // Implementamos resta por unidad (1 item = 1 resta de stock) para simplificar según exigencia.
         if (currentStock < 1) {
-          throw new Error(`Lo siento, el ${item.name} se ha agotado mientras realizabas tu pedido.`);
+          throw new Error(
+            `Lo siento, el ${item.name} se ha agotado mientras realizabas tu pedido.`
+          );
         }
 
         // Restar 1 unidad del stock físico
         transaction.update(productRef, {
           stock: currentStock - 1,
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         });
       }
 
       // C. Calcular Total Seguro (Server-Side)
-      const calculatedTotal = validatedOrder.items.reduce((sum, item) => sum + item.finalPrice, 0);
+      const calculatedTotal = validatedOrder.items.reduce(
+        (sum, item) => sum + item.finalPrice,
+        0
+      );
 
       // D. Crear Orden
       const orderRef = adminDb.collection('orders').doc();
@@ -128,11 +157,16 @@ export async function POST(req: Request) {
         ...validatedOrder,
         total: calculatedTotal,
         idempotencyKey: body.idempotencyKey || null,
-        estimatedCycleDays: validatedOrder.items.some(i => i.selectedWeight >= 3) ? 7 : 15,
+        estimatedCycleDays: validatedOrder.items.some(
+          (i) => i.selectedWeight >= 3
+        )
+          ? 7
+          : 15,
         reminded: false,
         _source: 'api',
         createdAt: new Date().toISOString(),
-        status: 'CREATED',
+        status: 'WAITING_PAYMENT',
+        expiresAt: Date.now() + 60 * 60 * 1000, // 1 hora
         customerIp: ip,
       };
 
@@ -142,7 +176,10 @@ export async function POST(req: Request) {
     });
 
     if (result.duplicate) {
-      logger.warn('Duplicate order attempt detected (Idempotency)', { idempotencyKey: body.idempotencyKey, ip });
+      logger.warn('Duplicate order attempt detected (Idempotency)', {
+        idempotencyKey: body.idempotencyKey,
+        ip,
+      });
       return NextResponse.json({ ok: true, id: result.id, duplicate: true });
     }
 
@@ -150,22 +187,29 @@ export async function POST(req: Request) {
     userLimit.count++;
     rateLimitMap.set(ip, userLimit);
 
-    // ✅ DESACOPLAMIENTO: El usuario recibe respuesta inmediata. 
+    // ✅ DESACOPLAMIENTO: El usuario recibe respuesta inmediata.
     // Las tareas pesadas (Email, Analítica, Notificaciones) ocurren en background.
     // Usamos void para disparar y no esperar, o Next.js 'after' si está disponible.
     processOrderEvent({
       type: 'ORDER_CREATED',
-      payload: { orderId: result.id, orderData: result.orderData }
-    }).catch(e => logger.error('Error en Background Processor Trigger', e));
+      payload: { orderId: result.id, orderData: result.orderData },
+    }).catch((e) => logger.error('Error en Background Processor Trigger', e));
 
-    logger.info('Order created successfully with ACID Transaction', { orderId: result.id, ip });
+    logger.info('Order created successfully with ACID Transaction', {
+      orderId: result.id,
+      ip,
+    });
     return NextResponse.json({ ok: true, id: result.id });
-
   } catch (e: any) {
-    logger.error('Unexpected error in order creation', { error: e.message || e });
+    logger.error('Unexpected error in order creation', {
+      error: e.message || e,
+    });
 
     if (e.name === 'ZodError') {
-      return NextResponse.json({ error: 'Datos de pedido inválidos.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Datos de pedido inválidos.' },
+        { status: 400 }
+      );
     }
 
     // Errores de la transacción (Ej: Sin Stock)

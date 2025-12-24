@@ -52,6 +52,8 @@ interface OrderWithId extends Order {
   id: string;
 }
 
+import { autoCancelExpiredOrders } from '@/lib/order-utils';
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderWithId[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,13 +66,25 @@ export default function OrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ AUTO-CANCEL (MANDATO-FILTRO)
+  useEffect(() => {
+    if (orders.length > 0) {
+      autoCancelExpiredOrders(
+        orders,
+        (id, data) => handleStatusChange(id, data.status as string),
+        (order) => console.log('Restoring stock for order', order.id) // TODO: Implement real stock restore API
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
+
   async function fetchOrders() {
     setIsLoading(true);
     try {
       const token = await auth.currentUser?.getIdToken();
       const res = await fetch('/api/orders/list', {
         headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store', // Asegura que el fetch no use caché del navegador
+        cache: 'no-store',
       });
       if (!res.ok) throw new Error('Error fetching orders');
       const data = await res.json();
@@ -187,6 +201,9 @@ export default function OrdersPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+
+              {/* ✅ RESUMEN DIARIO (MANDATO-FILTRO) */}
+              <DailySummaryDialog orders={orders} />
             </div>
 
             {/* KPI Cards */}
@@ -293,10 +310,13 @@ export default function OrdersPage() {
                         (now.getTime() - orderDate.getTime()) /
                         (1000 * 60 * 60);
 
-                      // Lógica de color para expirados (>1h en CREATED)
+                      // Lógica de color para expirados (>1h en WAITING_PAYMENT)
                       let rowClass =
                         'hover:bg-muted/30 transition-colors border-b dark:border-white/5';
-                      if (order.status === 'CREATED' && diffInHours > 1) {
+                      if (
+                        order.status === 'WAITING_PAYMENT' &&
+                        diffInHours > 1
+                      ) {
                         rowClass =
                           'bg-red-50 border-l-4 border-l-red-500 hover:bg-red-100 transition-colors border-b dark:border-white/5';
                       }
@@ -324,18 +344,14 @@ export default function OrdersPage() {
                           </TableCell>
                           <TableCell>
                             {/* ⚠️ Alerta Visual de expiración */}
-                            {order.status === 'CREATED' && diffInHours > 1 && (
-                              <div className="text-xs font-bold text-red-600 flex items-center gap-1 mb-1 animate-pulse">
-                                ⚠️ EXPIRADO ({Math.floor(diffInHours)}h)
-                              </div>
-                            )}
+                            {order.status === 'WAITING_PAYMENT' &&
+                              diffInHours > 1 && (
+                                <div className="text-xs font-bold text-red-600 flex items-center gap-1 mb-1 animate-pulse">
+                                  ⚠️ EXPIRADO ({Math.floor(diffInHours)}h)
+                                </div>
+                              )}
                             <Select
-                              value={
-                                (order.status || 'CREATED').toUpperCase() ===
-                                'PENDING'
-                                  ? 'PENDING_VERIFICATION'
-                                  : (order.status || 'CREATED').toUpperCase()
-                              }
+                              value={order.status || 'CREATED'}
                               onValueChange={(val) =>
                                 handleStatusChange(order.id, val)
                               }
@@ -344,18 +360,13 @@ export default function OrdersPage() {
                               <SelectTrigger
                                 className={cn(
                                   'w-[140px] font-bold h-8 border-none ring-offset-0 focus:ring-0',
-                                  order.status?.toUpperCase() === 'PENDING' ||
-                                    order.status?.toUpperCase() ===
-                                      'PENDING_VERIFICATION'
+                                  order.status === 'WAITING_PAYMENT'
                                     ? 'bg-orange-500/20 text-orange-600'
-                                    : order.status?.toUpperCase() ===
-                                        'CONFIRMED'
+                                    : order.status === 'PAID_VERIFIED'
                                       ? 'bg-blue-500/20 text-blue-600'
-                                      : order.status?.toUpperCase() ===
-                                          'DELIVERED'
+                                      : order.status === 'DELIVERED'
                                         ? 'bg-green-500/20 text-green-600'
-                                        : order.status?.toUpperCase() ===
-                                            'CREATED'
+                                        : order.status === 'CREATED'
                                           ? 'bg-gray-500/20 text-gray-600'
                                           : 'bg-zinc-800 text-zinc-400'
                                 )}
@@ -364,14 +375,28 @@ export default function OrdersPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="CREATED">Creado</SelectItem>
-                                <SelectItem value="PENDING_VERIFICATION">
-                                  Por Verificar
+                                <SelectItem value="WAITING_PAYMENT">
+                                  Esperando Pago
                                 </SelectItem>
-                                <SelectItem value="CONFIRMED">
-                                  Confirmado
+                                <SelectItem value="PAID_VERIFIED">
+                                  Pago Verificado
                                 </SelectItem>
-                                <SelectItem value="CUTTING">
-                                  En Corte
+                                <SelectItem
+                                  value="CUTTING"
+                                  disabled={
+                                    order.status !== 'PAID_VERIFIED' &&
+                                    order.status !== 'CUTTING' &&
+                                    order.status !== 'PACKING'
+                                  }
+                                  className={
+                                    order.status !== 'PAID_VERIFIED' &&
+                                    order.status !== 'CUTTING' &&
+                                    order.status !== 'PACKING'
+                                      ? 'text-muted-foreground line-through opacity-50'
+                                      : ''
+                                  }
+                                >
+                                  En Corte 🔪 (Req. Pago)
                                 </SelectItem>
                                 <SelectItem value="PACKING">
                                   Empacando
@@ -380,14 +405,19 @@ export default function OrdersPage() {
                                 <SelectItem value="DELIVERED">
                                   Entregado
                                 </SelectItem>
-                                <SelectItem value="CANCELLED">
-                                  Cancelado
+                                <SelectItem value="CANCELLED_TIMEOUT">
+                                  Cancelado (Timeout)
                                 </SelectItem>
                               </SelectContent>
                             </Select>
                           </TableCell>
                           <TableCell className="text-right">
-                            <OrderDetailsModal order={order} />
+                            <OrderDetailsModal
+                              order={order}
+                              onStatusChange={(status) =>
+                                handleStatusChange(order.id, status)
+                              }
+                            />
                           </TableCell>
                         </TableRow>
                       );
@@ -407,7 +437,13 @@ export default function OrdersPage() {
   );
 }
 
-function OrderDetailsModal({ order }: { order: OrderWithId }) {
+function OrderDetailsModal({
+  order,
+  onStatusChange,
+}: {
+  order: OrderWithId;
+  onStatusChange?: (status: string) => void;
+}) {
   const { toast } = useToast();
 
   const handleWhatsAppNotification = () => {
@@ -561,29 +597,40 @@ function OrderDetailsModal({ order }: { order: OrderWithId }) {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-white/5">
+              {/* Force Flow: Quick Actions */}
+              {order.status === 'WAITING_PAYMENT' && (
+                <Button
+                  onClick={() => onStatusChange?.('PAID_VERIFIED')}
+                  className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                >
+                  <DollarSign className="w-4 h-4 mr-2" /> Marcar Pago Recibido
+                </Button>
+              )}
+
+              <div className="flex justify-between items-center pt-2 border-t border-white/5 mt-2">
                 <span className="text-sm font-medium">Estado del Pedido:</span>
                 <Badge
                   className={cn(
-                    'font-bold text-[10px] tracking-widest uppercase',
-                    order.status === 'CREATED'
-                      ? 'bg-gray-500/20 text-gray-600'
-                      : order.status === 'PENDING_VERIFICATION'
-                        ? 'bg-orange-500/20 text-orange-600 animate-pulse'
-                        : order.status === 'CONFIRMED'
-                          ? 'bg-blue-500/20 text-blue-600'
-                          : order.status === 'DELIVERED'
-                            ? 'bg-green-500/20 text-green-600'
-                            : 'bg-zinc-800 text-zinc-400'
+                    'font-bold text-[10px] tracking-widest uppercase'
                   )}
-                  variant="outline"
+                  variant={
+                    order.status === 'WAITING_PAYMENT'
+                      ? 'destructive'
+                      : order.status === 'PAID_VERIFIED'
+                        ? 'success'
+                        : order.status === 'DELIVERED'
+                          ? 'default'
+                          : order.status === 'CREATED'
+                            ? 'secondary'
+                            : 'outline'
+                  }
                 >
                   {order.status === 'CREATED'
                     ? 'CREADO'
-                    : order.status === 'PENDING_VERIFICATION'
-                      ? 'POR VERIFICAR'
-                      : order.status === 'CONFIRMED'
-                        ? 'CONFIRMADO'
+                    : order.status === 'WAITING_PAYMENT'
+                      ? 'ESPERANDO PAGO'
+                      : order.status === 'PAID_VERIFIED'
+                        ? 'PAGO VERIFICADO'
                         : order.status === 'CUTTING'
                           ? 'EN CORTE'
                           : order.status === 'PACKING'
@@ -592,8 +639,8 @@ function OrderDetailsModal({ order }: { order: OrderWithId }) {
                               ? 'EN RUTA'
                               : order.status === 'DELIVERED'
                                 ? 'ENTREGADO'
-                                : order.status === 'CANCELLED'
-                                  ? 'CANCELADO'
+                                : order.status === 'CANCELLED_TIMEOUT'
+                                  ? 'TIMEOUT'
                                   : order.status}
                 </Badge>
               </div>
@@ -625,7 +672,9 @@ function OrderDetailsModal({ order }: { order: OrderWithId }) {
                           {h.status}
                         </p>
                         <p className="text-[9px] text-muted-foreground">
-                          {new Date(h.timestamp).toLocaleString()}
+                          {h.timestamp
+                            ? new Date(h.timestamp).toLocaleString()
+                            : 'N/A'}
                         </p>
                         {isDelayed && (
                           <p className="text-[9px] text-red-500 font-bold mt-1">
@@ -679,6 +728,70 @@ function OrderDetailsModal({ order }: { order: OrderWithId }) {
               </div>
             </div>
           </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DailySummaryDialog({ orders }: { orders: OrderWithId[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Calcular métricas al abrir (o renderizar)
+  const today = new Date();
+  const isToday = (dateString?: string) => {
+    if (!dateString) return false;
+    const d = new Date(dateString);
+    return (
+      d.getDate() === today.getDate() &&
+      d.getMonth() === today.getMonth() &&
+      d.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const todayDelivered = orders.filter(
+    (o) => o.status === 'DELIVERED' && isToday(o.deliveredAt || o.updatedAt) // Fallback to updatedAt if deliveredAt missing legacy
+  );
+
+  const totalOrders = todayDelivered.length;
+  const totalSales = todayDelivered.reduce((acc, o) => acc + o.total, 0);
+  const totalCash = todayDelivered
+    .filter((o) => o.paymentMethod === 'efectivo')
+    .reduce((acc, o) => acc + o.total, 0);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2 border-dashed">
+          <BarChart3 className="w-4 h-4" /> Resumen del Día
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm bg-white dark:bg-gray-950">
+        <DialogHeader>
+          <DialogTitle>📊 Cierre de Caja Diario</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="flex justify-between items-center border-b pb-2">
+            <span className="text-muted-foreground">Pedidos Entregados:</span>
+            <span className="font-bold text-xl">{totalOrders}</span>
+          </div>
+          <div className="flex justify-between items-center border-b pb-2">
+            <span className="text-muted-foreground">Ventas Totales:</span>
+            <span className="font-bold text-xl text-primary">
+              {formatPrice(totalSales)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center bg-green-50 p-2 rounded dark:bg-green-900/20">
+            <span className="text-green-700 font-bold dark:text-green-400">
+              Total Efectivo (Caja):
+            </span>
+            <span className="font-black text-xl text-green-700 dark:text-green-400">
+              {formatPrice(totalCash)}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground text-center pt-4">
+            * Se consideran solo pedidos en estado ENTREGADO con fecha de hoy.
+          </p>
         </div>
       </DialogContent>
     </Dialog>
