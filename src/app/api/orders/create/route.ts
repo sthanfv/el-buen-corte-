@@ -168,6 +168,7 @@ export async function POST(req: Request) {
         status: 'WAITING_PAYMENT',
         expiresAt: Date.now() + 60 * 60 * 1000, // 1 hora
         customerIp: ip,
+        source: body.source || 'direct',
       };
 
       transaction.set(orderRef, orderData);

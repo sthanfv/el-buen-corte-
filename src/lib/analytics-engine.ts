@@ -1,5 +1,43 @@
 import { adminDb } from './firebase';
 import { startOfMonth, format, parseISO, differenceInDays } from 'date-fns';
+import { z } from 'zod';
+
+export const AnalyticsEventSchema = z.object({
+  type: z.enum([
+    'VIEW_PRODUCT',
+    'ADD_TO_CART',
+    'START_CHECKOUT',
+    'ABANDON_CHECKOUT',
+    'ORDER_CREATED',
+    'SEARCH_PERFORMED',
+  ]),
+  payload: z.record(z.any()).optional(),
+  source: z.string().optional(),
+  ip: z.string().optional(),
+  createdAt: z.string(),
+});
+
+export type AnalyticsEvent = z.infer<typeof AnalyticsEventSchema>;
+
+/**
+ * Persiste un evento de analítica en Firestore para tracking de embudo.
+ */
+export async function trackEvent(data: Omit<AnalyticsEvent, 'createdAt'>) {
+  try {
+    const event: AnalyticsEvent = {
+      ...data,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Solo guardamos si es válido (MANDATO-FILTRO)
+    AnalyticsEventSchema.parse(event);
+
+    await adminDb.collection('analytics_events').add(event);
+  } catch (e) {
+    // Falla silenciosa para no interrumpir el flujo del usuario
+    console.warn('Analytics tracking failed:', e);
+  }
+}
 
 export interface CohortData {
   month: string;
@@ -22,7 +60,14 @@ export interface CustomerMetrics {
 export async function calculateRetentionAnalytics() {
   const ordersSnapshot = await adminDb
     .collection('orders')
-    .where('status', 'in', ['confirmed', 'preparing', 'delivered'])
+    .where('status', 'in', [
+      'PAID_VERIFIED',
+      'CUTTING',
+      'PACKING',
+      'ROUTING',
+      'DELIVERED',
+      'INVOICE_ISSUED',
+    ])
     .orderBy('createdAt', 'asc')
     .get();
 
@@ -85,7 +130,14 @@ export async function calculateRetentionAnalytics() {
 export async function calculateCustomerLTV() {
   const ordersSnapshot = await adminDb
     .collection('orders')
-    .where('status', 'in', ['confirmed', 'preparing', 'delivered'])
+    .where('status', 'in', [
+      'PAID_VERIFIED',
+      'CUTTING',
+      'PACKING',
+      'ROUTING',
+      'DELIVERED',
+      'INVOICE_ISSUED',
+    ])
     .get();
 
   const metrics: { [email: string]: CustomerMetrics } = {};

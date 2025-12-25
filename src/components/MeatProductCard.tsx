@@ -45,6 +45,7 @@ import AnimatedPrice from './AnimatedPrice';
 import { useToast } from '@/hooks/use-toast';
 import { useInterestScoring } from '@/hooks/use-interest-scoring';
 import { Sparkles, ShoppingCart } from 'lucide-react';
+import { track } from '@/lib/analytics-client';
 
 interface Props {
   product: Product;
@@ -75,6 +76,10 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
   // ✅ SCORING ALGORÍTMICO (MANDATO-FILTRO)
   const productCategory = (product.category as any) || 'Res';
   const { vector, dominantType, trackAction } = useInterestScoring();
+
+  useEffect(() => {
+    track('VIEW_PRODUCT', { productId: product.id, name: product.name });
+  }, [product.id, product.name]);
 
   useEffect(() => {
     if (!carouselApi) return;
@@ -146,6 +151,11 @@ export default function MeatProductCard({ product, onAddToCart }: Props) {
         finalPrice: totalPrice,
       });
       trackAction(productCategory, 'ADD_TO_CART'); // ✅ Track
+      track('ADD_TO_CART', {
+        productId: product.id,
+        name: product.name,
+        price: totalPrice,
+      });
       setCartState('success');
       setTimeout(() => setCartState('idle'), 2000);
     }, 800);

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase';
 import { headers } from 'next/headers';
 import { ProductSchema } from '@/schemas/product';
+import { logAdminAction } from '@/lib/audit-logger';
 
 // ✅ SECURITY: Force dynamic rendering (no caching of sensitive data)
 export const dynamic = 'force-dynamic';
@@ -13,10 +14,7 @@ export async function POST(req: Request) {
     const authorization = headersList.get('Authorization');
 
     if (!authorization?.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const idToken = authorization.split('Bearer ')[1];
@@ -33,10 +31,7 @@ export async function POST(req: Request) {
     }
 
     if (decodedToken.admin !== true) {
-      return NextResponse.json(
-        { error: 'Acceso denegado' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
     // ✅ SECURITY: Parse and validate request body
@@ -96,11 +91,21 @@ export async function POST(req: Request) {
       updatedBy: decodedToken.uid, // Audit trail
     });
 
-    return NextResponse.json({
-      ok: true,
-      id: sanitizedId
+    // ✅ AUDIT LOG (Phase 2)
+    await logAdminAction({
+      actorId: decodedToken.uid,
+      action: 'PRODUCT_UPDATE',
+      targetId: sanitizedId,
+      before: { status: 'existing_data_not_fetched_for_perf' }, // Minimizing reads
+      after: validatedData,
+      ip: headersList.get('x-forwarded-for') || 'unknown',
+      userAgent: headersList.get('user-agent') || 'unknown',
     });
 
+    return NextResponse.json({
+      ok: true,
+      id: sanitizedId,
+    });
   } catch (e: unknown) {
     // ✅ SECURITY: Don't expose error details in production
     const isDev = process.env.NODE_ENV === 'development';

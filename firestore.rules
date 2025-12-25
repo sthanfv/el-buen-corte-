@@ -72,6 +72,12 @@ service cloud.firestore {
       allow read, write: if false; 
     }
 
+    // ✅ PHASE 2: Immutable Admin Audit Logs
+    match /admin_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false; // Solo vía Admin SDK (Firebase Admin en API)
+    }
+
     // Regla por defecto: BLOQUEO TOTAL (Zero Trust)
     match /{document=**} {
       allow read, write: if false;

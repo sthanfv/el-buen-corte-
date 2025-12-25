@@ -9,6 +9,14 @@ export const OrderStatusEnum = z.enum([
   'ROUTING',
   'DELIVERED',
   'CANCELLED_TIMEOUT',
+  // ✅ PHASE 6: Legal Invoicing (Blindaje DIAN)
+  'INVOICE_PENDING',
+  'INVOICE_ISSUED',
+  'INVOICE_REJECTED',
+  // ✅ PHASE 7: operational exception states
+  'DELIVERY_FAILED',
+  'RETURNED',
+  'REFUNDED',
 ]);
 export type OrderStatus = z.infer<typeof OrderStatusEnum>;
 
@@ -141,6 +149,11 @@ export const OrderSchema = z.object({
       message: 'Debes aceptar la política de tratamiento de datos personales.',
     }),
   }),
+
+  // ✅ PHASE 5: Marketing Analytics & Attribution
+  source: z
+    .enum(['instagram', 'whatsapp', 'organic', 'facebook', 'search', 'direct'])
+    .default('direct'),
 });
 
 export type Order = z.infer<typeof OrderSchema> & { id?: string };

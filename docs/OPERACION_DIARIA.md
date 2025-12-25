@@ -1,40 +1,49 @@
-# 📋 Guía de Operación Diaria - El Buen Corte
+# 📋 Guía de Operación Diaria - El Buen Corte 🥩
+**Versión**: 2.1
+**Estado**: ✅ Operativo
 
-Esta lista de chequeo debe realizarse **todos los días** para garantizar el éxito de la operación. "Confiar en el sistema, no en la memoria".
-
-## 🌅 Inicio de Jornada (10:00 AM)
-- [ ] **Abrir Admin Dashboard**: Verificar si entraron pedidos nocturnos.
-- [ ] **Verificar Stock Crítico**: ¿Queda suficiente Tomahawk/Picanha para el día?
-- [ ] **Actualizar Precios/Stock**: Si algo cambió, actualizarlo en `Productos`.
-
-## 🥩 Proceso de Pedidos (Continuo)
-Para cada pedido nuevo en estado **CREADO/ESPERANDO PAGO**:
-1.  [ ] **Verificar Pago**:
-    *   Si es Nequi/Bancolombia: Abrir App del banco y confirmar recepción exactaa.
-    *   **ACCIÓN EN SISTEMA**: Clic en `Marcar Pago Recibido` (Solo si la plata está en mano).
-2.  [ ] **Pasar a Corte**:
-    *   Una vez verificado, cambiar estado a `EN CORTE`.
-    *   El carnicero recibe la orden (impresa o verbal).
-3.  [ ] **Pesaje y Empaque**:
-    *   Verificar peso real vs peso solicitado.
-    *   Anotar en la bolsa el # de Pedido.
-
-## 🚚 Despacho (3:00 PM - 5:00 PM)
-- [ ] **Generar Ruta**:
-    *   Ir a Admin -> Generar Ruta.
-    *   Filtrar por pedidos en `EMPACANDO`.
-    *   **Copiar Ruta**: Enviar texto generado al WhatsApp del mensajero.
-- [ ] **Cambiar Estados**:
-    *   Pasar todos los pedidos de la ruta a `EN RUTA`.
-
-## 🌙 Cierre de Caja (8:00 PM)
-- [ ] **Abrir Resumen del Día**:
-    *   Clic en botón `📊 Resumen del Día`.
-- [ ] **Contar Efectivo**:
-    *   Comparar billetes físicos con `Total Efectivo (Caja)`.
-    *   ¿Cuadra? ✅ Guardar. ❌ Investigar diferencia.
-- [ ] **Verificar Transferencias**:
-    *   Sumar totales de apps bancarias vs `Total Ventas - Total Efectivo`.
+Esta guía es el manual de procedimientos para garantizar que cada cliente reciba su carne premium con la calidad esperada. **Regla de Oro:** "Si no está en el sistema, no existe".
 
 ---
-**💡 Regla de Oro:** Si el pedido no está en el sistema, **NO EXISTE**. Todo movimiento de dinero o carne debe reflejarse aquí.
+
+## 🌅 1. Inicio de Jornada (10:00 AM)
+- [ ] **Dashboard Check**: Abrir el Panel Administrativo para revisar pedidos nocturnos.
+- [ ] **Inventario Físico vs Digital**: ¿Coincide el stock de cortes premium? Ajustar en la pestaña `Productos` si es necesario.
+- [ ] **Alertas de Expiración**: Revisar si hay pedidos con "⚠️ EXPIRADO" (más de 1h sin pago). Contactar al cliente por WhatsApp antes de cancelar.
+
+## 💰 2. Validación de Pagos (Continuo)
+Para cada pedido en **ESPERANDO PAGO**:
+1.  **WhatsApp Business**: Revisar el comprobante enviado por el cliente.
+2.  ** App Bancaria**: Confirmar que el dinero entró *realmente* a la cuenta.
+3.  **Acción**: Cambiar estado a `PAGO VERIFICADO`. 
+    *   *Nota: El sistema enviará automáticamente un correo de confirmación.*
+
+## 🔪 3. Área de Corte y Empaque
+Solo procesar pedidos en `PAGO VERIFICADO`.
+- **Protocolo de Peso Variable**:
+    - Si el peso real es **menor** al mínimo: Completar el gramaje o cortar otra pieza.
+    - Si el peso real es **mayor** al máximo: **Enviar igual**. El cliente queda feliz y el margen del negocio ya cubre esta cortesía (Fidelización).
+- **Etiquetado**: Marcar cada bolsa con el nombre del cliente y el `#ID` del pedido.
+- **Cambio de Estado**: Pasar a `EMPACANDO` una vez sellado al vacío.
+
+## 🚚 4. Despacho y Logística (3:00 PM - 5:00 PM)
+1.  **Generar Ruta**: En el Panel de Pedidos, filtrar por `EMPACANDO`.
+2.  **WhatsApp del Mensajero**: Usar la herramienta "Generar Ruta" para enviar las direcciones, teléfonos y cobros (si aplica) de forma consolidada.
+3.  **En Ruta**: Cambiar masivamente los pedidos a `EN RUTA`.
+
+## 📊 5. Cierre y Auditoría (8:00 PM)
+- [ ] **Confirmar Entregas**: Cambiar pedidos entregados a `ENTREGADO`.
+- [ ] **Resumen del Día**: Clic en `📊 Resumen del Día`.
+- [ ] **Cuadre de Caja**:
+    - **Efectivo**: El dinero físico debe coincidir con el reporte.
+    - **Transferencias**: Sumar Nequi/Bancolombia vs Reporte Digital.
+- [ ] **Facturación Global**: Generar factura consolidada para pedidos que no solicitaron factura electrónica individual.
+
+---
+
+## 🚨 Situaciones Especiales
+- **Cliente no responde al mensajero**: El mensajero espera 10 min. Si no hay contacto, el pedido se regresa a la carnicería. Cambiar estado a `PAGO VERIFICADO` y reagendar.
+- **Stock Agotado Inesperadamente**: Llamar de inmediato al cliente. Ofrecer un corte superior por el mismo precio o devolución del dinero. **La reputación vale más que un filete.**
+
+---
+*Manual de Operaciones - El Buen Corte v2.1*

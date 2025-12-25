@@ -1,110 +1,98 @@
-# 🥩 Radiografía del Proyecto: El Buen Corte
-**Versión**: 1.0.0 (Beta Release)
-**Fecha**: 10 de Diciembre, 2025
+# 🥩 El Buen Corte: Radiografía Completa del Proyecto 🚀
+**Versión**: 2.5.0 (Production Hardened)
+**Fecha**: 24 de Diciembre, 2025
+**Estado**: ✅ Desplegado y Operativo
 
-Este documento técnico sirve como "Estado del Arte" del proyecto para presentación a inversores y equipo técnico.
-
----
-
-## 1. Resumen Ejecutivo
-"El Buen Corte" no es solo una página web, es una **Plataforma de E-commerce Serverless** diseñada para escalar sin costos fijos de infraestructura. Combina una interfaz de usuario premium (shadcn/ui) con un backend robusto (Next.js + Firebase Admin) para gestionar productos, pedidos e inventario en tiempo real.
-
-### Estado Actual (Release Candidate)
-- **Dashboard Administrativo**: Panel premium con analítica de retención, LTV y System Logs.
-- **Backend Robusto**: Transacciones ACID, desacoplamiento por eventos y auditoría persistente.
-- **DevOps**: CI/CD configurado con GitHub Actions y Husky.
-- **Base de Datos**: Firestore con Triggers y Reglas de Seguridad estrictas.
-- **Seguridad**: Autenticación Centralizada (Firebase Admin) + Prevención XSS.
-- **Moderación**: Panel de Experiencias operativo con moderación en tiempo real.
+Este documento constituye la **Radiografía Definitiva** del proyecto. Sirve como informe técnico, operativo y estratégico para inversores, desarrolladores y gerencia.
 
 ---
 
-## 2. Arquitectura del Sistema
+## 🏛️ 1. Visión Arquitectónica (MANDATO-FILTRO)
 
+"El Buen Corte" es una plataforma de e-commerce de ingeniería avanzada diseñada bajo el paradigma **Serverless Core**. No es solo una tienda; es un sistema de gestión distribuido que prioriza la **seguridad proactiva** y la **integridad de datos**.
+
+### 🏗️ Diagrama de Flujo del Ecosistema
 ```mermaid
 graph TD
-    User[Cliente] -->|Navega HTTPS| CDN[Vercel Edge Network]
-    CDN -->|Renderiza| Next[Next.js App Router]
+    User[Cliente] -->|Browsing / Order| Next[Next.js App Router]
+    Next -->|Security Check| Middleware[Middleware: Redis Rate Limit + Blacklist]
+    Middleware -->|Safe| API[API Routes: /api/orders]
     
-    subgraph "Frontend Layer (React)"
-        Layout[Root Layout + Analytics]
-        Page[Product Catalog]
-        Cart[Shopping Cart Context]
+    subgraph "Backend Fortress"
+        API -->|Atomic Transaction| Firestore[(Google Firestore ACID)]
+        API -->|Async Events| Handler[Event Handler]
     end
     
-    subgraph "Secure Backend Layer (API Routes)"
-        Auth[AdminGuard Middleware]
-        ProductsAPI[API: /products]
-        OrdersAPI[API: /orders]
-        UploadAPI[API: /upload]
-    end
+    Handler -->|Email| Resend[Resend Service]
+    Handler -->|Tracking| Analytics[Analytics Engine]
     
-    subgraph "Data & Services"
-        Firestore[(Firebase Firestore DB)]
-        Blob[Vercel Blob Storage]
-        AuthService[Firebase Auth]
-    end
-
-    Next --> Layout
-    Page --> ProductsAPI
-    Cart --> OrdersAPI
-    
-    ProductsAPI -->|Validates Token| AuthService
-    ProductsAPI -->|R/W Data| Firestore
-    
-    UploadAPI -->|Streams Buffer| Blob
-    UploadAPI -->|Verifies Admin| AuthService
+    Admin[Admin Panel] -->|SSR Forzado| Firestore
+    Admin -->|Claims Check| Auth[Firebase Admin Auth]
 ```
 
 ---
 
-## 3. Flujo Crítico de Negocio
+## 🛡️ 2. Los 4 Pilares del Blindaje (Security & Reliability)
 
-### A. Creación de Producto (Admin)
-1.  **Autenticación**: Admin se loguea en `/admin/login`.
-    *   *Seguridad*: Token JWT validado en cada request.
-2.  **Carga de Datos**: Formulario con validación en tiempo real (Zod).
-    *   *Inputs*: Nombre, Precio (Numérico), Categoría.
-3.  **Gestión de Imágenes**:
-    *   Usuario selecciona archivo -> API `/api/upload/blob` -> Vercel Blob -> Retorna URL pública.
-4.  **Persistencia**:
-    *   Datos + URL Imagen -> API `/api/products/create` -> Firestore Collection `products`.
+Basado en el protocolo **MANDATO-FILTRO**, el proyecto implementa seguridad de grado empresarial:
 
-### B. Compra de Cliente (User)
-1.  **Exploración**: Catálogo público optimizado (Carga infinita/Lazy loading).
-2.  **Carrito**: Estado global (Context API) con sincronización de pesos y precios.
-3.  **Checkout**:
-    *   **Idempotencia**: Prevención de pedidos duplicados.
-    *   **Segregación**: Redirección a seguimiento público (Read-only status).
-    *   **Conversión**: Integración con WhatsApp Business.
+1.  **Integridad Transaccional (ACID)**: El sistema utiliza transacciones atómicas para evitar condiciones de carrera. El stock se verifica y descuenta en una sola operación indivisible.
+2.  **Defensa de Borde (Middleware)**: Implementación de **Upstash Redis** para:
+    *   **Rate Limiting**: Previene ataques de fuerza bruta y spam de pedidos.
+    *   **IP Blacklisting**: Bloqueo instantáneo de IPs detectadas por el sistema Honeypot.
+    *   **Seguridad de Headers**: HSTS, CSP endurecida, X-Frame-Options y Anti-MIME sniffing.
+3.  **Observabilidad Forense**: Sistema de logs centralizado que registra cada transición de estado, error del servidor o intento de acceso no autorizado con metadatos contextuales (IP, User-Agent).
+4.  **Resiliencia "Fail-Open"**: En caso de caída de servicios externos (como Redis), el sistema está diseñado para seguir operando (priorizando disponibilidad) sin comprometer la base de datos central.
 
 ---
 
-## 4. Stack Tecnológico (La "Fórmula Secreta")
+## 📈 3. Motor de Inteligencia de Negocio (Analytics)
 
-| Capa | Tecnología | Justificación |
+El proyecto incluye un motor de analítica avanzado que transforma pedidos en insights:
+
+*   **Análisis de Cohortes**: Visualización del % de retención de clientes mes a mes.
+*   **Customer LTV (Lifetime Value)**: Cálculo automático de cuánto valor aporta cada cliente a largo plazo.
+*   **Cierre de Caja Diario**: KPIs en tiempo real de ventas, pedidos entregados y efectivo en caja.
+*   **Semáforo de Expiración**: Alerta visual para pedidos pendientes de pago por más de 1 hora, optimizando la rotación de inventario.
+
+---
+
+## 🥩 4. Solución al "Dilema del Carnicero" (Peso Variable)
+
+A diferencia de un e-commerce estándar, este sistema maneja la complejidad de los productos frescos:
+*   **Rangos de Peso**: El cliente elige un producto con un peso aproximado (ej: 900g - 1.1kg).
+*   **Precios Dinámicos vs Fijos**: Soporta tanto el cobro por kg real como el precio fijo por pieza, garantizando que el "cliente nunca pierda".
+*   **Logística Inteligente**: Generador de rutas automático para WhatsApp que consolida paradas, direcciones y montos a cobrar para el mensajero.
+
+---
+
+## 🛠️ 5. Stack Tecnológico de Elite
+
+| Componente | Tecnología | Razón del Uso |
 | :--- | :--- | :--- |
-| **Framework** | **Next.js 15 (App Router)** | SEO nativo, velocidad de carga y API integrada. |
-| **UI Library** | **Shadcn/UI + Tailwind** | Diseño estético profesional, accesible y ligero. |
-| **Base de Datos** | **Google Firestore** | NoSQL, tiempo real, escalado infinito gratuito inicial. |
-| **Storage** | **Vercel Blob** | Almacenamiento de imágenes optimizado para el Edge. |
-| **Auth** | **Firebase Authentication** | Seguridad de grado bancario sin mantener servidores propios. |
-| **Validación** | **Zod** | Garantiza que nunca entren datos corruptos al sistema. |
-| **Testing** | **Jest + RTL** | Estándar de la industria para pruebas unitarias. |
+| **Framework** | **Next.js 15+ (App Router)** | Renderizado híbrido (SSR/SSG) y APIs optimizadas. |
+| **Lenguaje** | **TypeScript** | Eliminación de errores en tiempo de ejecución. |
+| **Base de Datos** | **Firestore** | Latencia mínima y escalabilidad elástica. |
+| **Caché/Security** | **Upstash Redis** | Almacenamiento distribuido de alta velocidad. |
+| **UI System** | **Shadcn/UI + Framer** | Interfaz premium que genera confianza inmediata. |
+| **Validación** | **Zod** | Esquemas estrictos de entrada/salida de datos. |
 
 ---
 
-## 5. Próximos Pasos para Inversión (Roadmap)
+## 🚀 6. Roadmap: Hacia el Siguiente Nivel
 
-### Fase A: Profesionalización (Lo que falta para "Amazon")
-- **Pasarela de Pagos**: Integrar Stripe/MercadoPago directamente.
-- **Dashboard Analítico**: Gráficos de ventas en `/admin/dashboard` (Actualmente lista plana).
-- **Emails Transaccionales**: Confirmación automática de pedidos (Resend.com).
+### Corto Plazo:
+*   **Cloud Function Sync**: Automatizar la liberación de stock de pedidos expirados.
+*   **PWA**: Instalación en móviles para notificaciones push de ofertas.
 
-### Fase B: Escala Masiva
-- **App Móvil**: Convertir PWA (Progressive Web App).
-- **Multi-tenant**: Soportar múltiples sucursales con inventarios independientes.
+### Largo Plazo:
+*   **Predicción de Demanda**: IA para predecir qué cortes se venderán más el fin de semana.
+*   **Pasarela Multi-checkout**: Integración de pagos automáticos (Stripe/Wompi).
 
 ---
 
-Este proyecto está construido sobre cimientos sólidos. Es una base escalable lista para recibir tráfico real.
+## 🎯 Conclusión
+**El Buen Corte** no es solo software; es un activo digital escalable, seguro y optimizado para la rentabilidad. Representa el estándar de oro en aplicaciones modernas de e-commerce especializado.
+
+---
+*Documentación generada bajo el protocolo MANDATO-FILTRO - El Buen Corte v2.5*

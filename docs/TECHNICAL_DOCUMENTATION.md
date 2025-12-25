@@ -1,8 +1,8 @@
 # 📘 Documentación Técnica Completa - El Buen Corte
 
-**Última Actualización**: 19 de Diciembre de 2024  
-**Versión**: 2.0  
-**Estado**: ✅ Producción Ready
+**Última Actualización**: 24 de Diciembre de 2024  
+**Versión**: 2.5  
+**Estado**: ✅ Producción Hardened (MANDATO-FILTRO)
 
 ---
 
@@ -35,12 +35,11 @@
 
 ### Características Principales
 
-✅ **Peso Variable Inteligente**: Manejo del "Dilema del Carnicero" con precios fijos  
-✅ **Facturación DIAN**: Cumplimiento legal Colombia  
-✅ **Checkout Manual**: Integración WhatsApp para confirmación de pago  
-✅ **Admin en Tiempo Real**: SSR forzado para datos actualizados  
-✅ **Seguridad Enterprise**: OWASP Top 10 mitigado  
-✅ **UX Premium**: Diseño moderno con micro-animaciones
+✅ **Peso Variable Inteligente**: Manejo del "Dilema del Carnicero" con precios ajustados.  
+✅ **Middleware de Borde**: Rate limiting y Blacklisting vía Upstash Redis.  
+✅ **Analítica Pro**: Cohortes, LTV y Dashboard de KPI en tiempo real.  
+✅ **Idempotencia Transaccional**: Blindaje contra duplicados y fallos de red.  
+✅ **Seguridad Enterprise**: HSTS, CSP endurecida y Sanitización XSS.
 
 ---
 
@@ -50,7 +49,7 @@
 
 | Tecnología | Versión | Propósito |
 |------------|---------|-----------|
-| **Next.js** | 16.0.0 | Framework React con SSR/SSG |
+| **Next.js** | 16.1.0 (Turbopack) | Framework React con App Router |
 | **React** | 19.0.0 | UI Library |
 | **TypeScript** | 5.x | Type Safety |
 | **Tailwind CSS** | 3.x | Styling |
@@ -126,18 +125,18 @@ El-buen-corte--main/
 
 ```mermaid
 graph TD
-    A[Cliente Web] -->|HTTPS| B[Vercel Edge]
-    B --> C[Next.js Middleware]
-    C -->|Rate Limit| D[Upstash Redis]
-    C --> E[Next.js App]
-    E -->|Auth| F[Firebase Auth]
-    E -->|Data| G[Firestore]
-    E -->|Images| H[Vercel Blob]
-    E -->|Emails| I[Resend]
-    E -->|Errors| J[Sentry]
+    A[Cliente Web] -->|HTTPS| B[Vercel Edge Proxy]
+    B --> C[Next.js Middleware Proxy]
+    C -->|Check Rate Limit / Blacklist| D[Upstash Redis]
+    D -->|Safe Traffic| E[Next.js Core App]
+    E -->|Auth Verification| F[Firebase Admin]
+    E -->|Write Transaction| G[(Firestore ACID)]
+    E -->|Event Loop| H[Background Handler]
     
-    K[Admin Panel] -->|SSR| E
-    K -->|Admin Token| F
+    H -->|Deliver Email| I[Resend]
+    H -->|Log Audit| J[System Logs]
+    
+    K[Admin Panel] -->|SSR Forzado| E
 ```
 
 ---

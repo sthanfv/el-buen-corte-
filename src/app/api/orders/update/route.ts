@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase';
 import { logger } from '@/lib/logger';
 import { verifyAdmin } from '@/lib/auth-server';
+import { logAdminAction } from '@/lib/audit-logger';
+import { headers } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,10 +50,30 @@ export async function POST(req: NextRequest) {
 
     // ✅ FSM FLEXIBLE (MANDATO-FILTRO): Administradores pueden saltar estados
     // Solo impedimos transiciones desde estados terminales (DELIVERED, CANCELLED...)
-    const terminalStatuses = ['DELIVERED', 'CANCELLED', 'CANCELLED_TIMEOUT'];
+    const terminalStatuses = [
+      'DELIVERED',
+      'CANCELLED',
+      'CANCELLED_TIMEOUT',
+      'RETURNED',
+      'REFUNDED',
+    ];
 
     if (nextStatus && nextStatus !== currentStatus) {
-      if (terminalStatuses.includes(currentStatus)) {
+      // ✅ OPERACIÓN REAL: DELIVERED es inmutable para proteger integridad de cierre
+      if (currentStatus === 'DELIVERED') {
+        return NextResponse.json(
+          {
+            error:
+              'No se puede modificar un pedido que ya ha sido entregado (DELIVERED). Para devoluciones use el estado RETURNED.',
+          },
+          { status: 400 }
+        );
+      }
+
+      if (
+        terminalStatuses.includes(currentStatus) &&
+        !['REFUNDED', 'RETURNED'].includes(nextStatus)
+      ) {
         return NextResponse.json(
           {
             error: `No se puede modificar un pedido en estado terminal: ${currentStatus}`,
@@ -118,6 +140,18 @@ export async function POST(req: NextRequest) {
     await orderRef.update({
       ...sanitizedUpdates,
       history: firebaseAdmin.firestore.FieldValue.arrayUnion(historyItem),
+    });
+
+    // ✅ AUDIT LOG (Phase 2)
+    const headersList = await headers();
+    await logAdminAction({
+      actorId: decodedToken.uid,
+      action: 'ORDER_STATUS_CHANGE',
+      targetId: id,
+      before: { status: currentStatus },
+      after: { status: nextStatus || currentStatus, ...sanitizedUpdates },
+      ip: headersList.get('x-forwarded-for') || 'unknown',
+      userAgent: headersList.get('user-agent') || 'unknown',
     });
 
     logger.info('Order updated by admin', {
