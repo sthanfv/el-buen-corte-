@@ -24,24 +24,27 @@ export default function AdminGuard({
       try {
         const tokenResult = await getIdTokenResult(user, true);
 
-        // logs de depuración (MANDATO-FILTRO)
-        console.log("DEBUG AUTH:", {
-          uid: user.uid,
-          email: user.email,
-          providerId: user.providerData[0]?.providerId,
-          claims: tokenResult.claims
-        });
+        // Validamos privilegios admin (MANDATO-FILTRO)
 
-        const envWhitelist = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-        const WHITELIST = ['fv9316@gmail.com', 'admin@buencorte.co', ...envWhitelist];
+        const envWhitelist = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
+          .split(',')
+          .map((e) => e.trim().toLowerCase());
+        const WHITELIST = [
+          'fv9316@gmail.com',
+          'admin@buencorte.co',
+          ...envWhitelist,
+        ];
 
-        const isWhitelisted = user.email && WHITELIST.includes(user.email.toLowerCase());
+        const isWhitelisted =
+          user.email && WHITELIST.includes(user.email.toLowerCase());
         const isAdmin = tokenResult.claims.admin === true || isWhitelisted;
 
         if (isAdmin) {
           setAllow(true);
         } else {
-          console.error(`Acceso denegado: El usuario ${user.email || user.uid || 'desconocido'} no tiene privilegios.`);
+          console.error(
+            `Acceso denegado: El usuario ${user.email || user.uid || 'desconocido'} no tiene privilegios.`
+          );
           setAllow(false);
           await auth.signOut();
           router.push('/admin/login');
