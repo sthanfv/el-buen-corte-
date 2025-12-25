@@ -23,7 +23,8 @@ export function autoCancelExpiredOrders(
       now > order.expiresAt &&
       order.id
     ) {
-      console.log(`[AutoCancel] Cancelling expired order ${order.id}`);
+      // Logger audit logic here if needed
+      // logger.info(`[AutoCancel] Cancelling expired order ${order.id}`);
 
       // 1. Marcar como cancelado por timeout
       updateOrder(order.id, {

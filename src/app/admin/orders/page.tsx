@@ -72,7 +72,7 @@ export default function OrdersPage() {
       autoCancelExpiredOrders(
         orders,
         (id, data) => handleStatusChange(id, data.status as string),
-        (order) => console.log('Restoring stock for order', order.id) // TODO: Implement real stock restore API
+        (order) => {} // TODO: Implement real stock restore API logic here
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
