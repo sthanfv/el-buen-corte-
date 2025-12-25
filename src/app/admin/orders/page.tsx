@@ -448,7 +448,7 @@ function OrderDetailsModal({
 
   const handleWhatsAppNotification = () => {
     // 1. Limpieza del número: Quitar todo lo que no sea dígito
-    let rawPhone = order.customerInfo.customerPhone.replace(/\D/g, '');
+    let rawPhone = (order.customerInfo?.customerPhone || '').replace(/\D/g, '');
 
     // 2. Lógica inteligente para Colombia (Evitar doble 57)
     // Si el usuario escribió "57300..." -> lo dejamos así.
@@ -461,7 +461,7 @@ function OrderDetailsModal({
     }
 
     const message = encodeURIComponent(
-      `*¡Hola ${order.customerInfo.customerName}!* 👋\n\n` +
+      `*¡Hola ${order.customerInfo?.customerName || 'Cliente'}!* 👋\n\n` +
         `Tu pedido *#${order.id.slice(0, 8)}* en *El Buen Corte* ha sido recibido con éxito.\n\n` +
         `*Resumen del Pedido:*\n` +
         `${order.items.map((i) => `- ${i.name} (${i.selectedWeight.toFixed(2)}kg)`).join('\n')}\n\n` +
@@ -504,7 +504,7 @@ function OrderDetailsModal({
             </h3>
             <div className="bg-muted/30 p-4 rounded-lg space-y-2 border border-black/5">
               <p className="font-black text-lg">
-                {order.customerInfo.customerName}
+                {order.customerInfo?.customerName || 'N/A'}
               </p>
               <p className="text-xs font-bold text-primary flex items-center gap-2">
                 <Calendar className="w-3.5 h-3.5" />
@@ -521,10 +521,10 @@ function OrderDetailsModal({
                     })
                   : 'N/A'}
               </p>
-              {order.customerInfo.customerPhone && (
+              {order.customerInfo?.customerPhone && (
                 <div className="pt-2">
                   <p className="text-sm font-medium mb-2">
-                    WhatsApp: {order.customerInfo.customerPhone}
+                    WhatsApp: {order.customerInfo?.customerPhone}
                   </p>
                   <Button
                     onClick={handleWhatsAppNotification}
@@ -534,9 +534,9 @@ function OrderDetailsModal({
                   </Button>
                 </div>
               )}
-              {order.customerInfo.customerAddress && (
+              {order.customerInfo?.customerAddress && (
                 <p className="text-sm text-muted-foreground mt-2">
-                  📍 {order.customerInfo.customerAddress}
+                  📍 {order.customerInfo?.customerAddress}
                 </p>
               )}
             </div>
